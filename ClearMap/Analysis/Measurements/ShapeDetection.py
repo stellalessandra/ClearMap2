@@ -164,7 +164,7 @@ def find_intensity(source, label, max_label = None, method = 'sum', verbose = Fa
   else:
     raise RuntimeError('Unkown method %r!' % (method,));
   
-  intensities = measure(label, labels=label, index=np.arange(1, max_label + 1));
+  intensities = measure(source, labels=label, index=np.arange(1, max_label + 1));
   
   if verbose:
     timer.print_elapsed_time(head='Intensity detection');
