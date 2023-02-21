@@ -58,7 +58,7 @@ import ClearMap.Utils.HierarchicalDict as hdict
 
 default_cell_detection_parameter = dict( 
   #flatfield
-  iullumination_correction = dict(flatfield = None,
+  illumination_correction = dict(flatfield = None,
                                   scaling = 'mean'),
                        
   #background removal
@@ -491,7 +491,7 @@ def detect_cells_block(source, parameter = default_cell_detection_parameter):
     
     # extended maxima
     maxima = md.find_maxima(dog, **parameter_maxima, verbose=verbose);
-  
+
     if save:
       save = io.as_source(save);
       save[base_slicing] = maxima[valid_slicing];
