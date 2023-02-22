@@ -18,7 +18,7 @@ def convert_data_to_numpy(rerun=False):
         print("Stitching has already been done!")
     
     
-def resampling(source_res, sink_res, resources_directory, rerun=False):
+def resampling(source_res, sink_res, directory, rerun=False):
     """
     Parameters
     ----------
@@ -32,26 +32,26 @@ def resampling(source_res, sink_res, resources_directory, rerun=False):
       "processes" : 4,
       "verbose" : False,             
       };
-    if rerun and not os.path.exists(resources_directory+'resampled.npy'):    
+    if rerun and not os.path.exists(directory+'resampled.npy'):    
         io.delete_file(ws.filename('resampled'))
         res.resample(ws.filename('raw'), sink=ws.filename('resampled'), 
                      **resample_parameter)
     else:
         print("Resampling has already been done!")
 
-def initialization_alignment(resources_directory):
+def initialization_alignment(directory):
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
       slicing=(slice(None),slice(None),slice(1,256)), orientation=(1,2,3),
       overwrite=False, verbose=False);
           
     #alignment parameter files    
-    align_channels_affine_file   = io.join(resources_directory, 
+    align_channels_affine_file   = io.join(directory, 
                                            'Alignment/align_affine.txt')
-    align_reference_affine_file  = io.join(resources_directory, 
+    align_reference_affine_file  = io.join(directory, 
                                            'Alignment/align_affine.txt')
 #    align_reference_bspline_file = io.join(resources_directory, 
 #                                           'Alignment/align_bspline.txt')
-    align_reference_bspline_file = io.join(resources_directory, 
+    align_reference_bspline_file = io.join(directory, 
                                            'Alignment/align_bsplineTest.txt')
     
     return annotation_file, reference_file, distance_file, \
@@ -60,11 +60,11 @@ align_reference_bspline_file
     
 
 def alignment_resampled_to_autofluorescence(align_channels_affine_file, 
-                                            resources_directory,
+                                            directory,
                                             rerun):
     print("Aligning resampled data to autofluorescence file")
     
-    if rerun and not os.path.exists(resources_directory+
+    if rerun and not os.path.exists(directory+
                                     'elastix_resampled_to_auto/results0.zraw'):
         # align the two channels
         align_channels_parameter = {            
@@ -88,10 +88,10 @@ def alignment_resampled_to_autofluorescence(align_channels_affine_file,
 def alignment_autofluorescence_to_reference(reference_file,
                                             align_reference_affine_file,
                                             align_reference_bspline_file,
-                                            resources_directory,
+                                            directory,
                                             rerun):
     print("Aligning autofluorescence file to reference file")
-    if rerun and not os.path.exists(resources_directory+
+    if rerun and not os.path.exists(directory+
                                     'elastix_auto_to_reference/results0.zraw'):
         # align autofluorescence to reference
         align_reference_parameter = {            
@@ -122,13 +122,13 @@ align_channels_affine_file, align_reference_affine_file, \
 align_reference_bspline_file = initialization_alignment(resources_directory)
 
     alignment_resampled_to_autofluorescence(align_channels_affine_file, 
-                                            resources_directory,
+                                            directory,
                                             rerun)
     
     alignment_autofluorescence_to_reference(reference_file,
                                             align_reference_affine_file,
                                             align_reference_bspline_file,
-                                            resources_directory,
+                                            directory,
                                             rerun)
 
 
@@ -196,9 +196,11 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
         cells.filter_cells(source = ws.filename('cells',
                                             postfix=str(threshold_detection), 
                                             prefix='debug'), 
-                           sink = ws.filename('cells', postfix='filtered700', 
-                                          prefix='debug'),
-                                              thresholds=thresholds_filtering);
+                           sink = ws.filename('cells', 
+                                              postfix='filtered'+str(threshold_detection),
+                                              prefix='debug'),
+                                              thresholds=thresholds_filtering)
+        print("plotting...")
         visualization_filtering(threshold_detection)
     else:
         # doing cell detection
@@ -214,6 +216,29 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
         thresholds=thresholds_filtering)
 
 
+def visualization_cell_statistics(threshold_detection, directory,
+                                  show=True):
+      source = ws.source('cells', postfix='filtered'+str(threshold_detection))
+      plt.figure(1)
+      plt.clf()
+      names = source.dtype.names
+      nx,ny = p3d.subplot_tiling(len(names))
+      for i, name in enumerate(names):
+          plt.subplot(nx, ny, i+1)
+          plt.hist(source[name])
+          plt.title(name)
+      plt.tight_layout()
+      if show:
+          plt.show()
+      else:
+          if os.path.exists(directory+'figures/'):
+              plt.savefig(directory+'figures/filtering_stats.png')
+          else: 
+              mkdirp(directory+'figures/')
+              plt.savefig(directory+'figures/filtering_stats.png')
+      # Decide where to save plot
+      
+    
 
 if __name__ == "__main__":
     # parsing name of the folder
@@ -245,7 +270,7 @@ if __name__ == "__main__":
     
     # resampling of autofluorescence
     resampling(source_res=[1.626,1.626,5], sink_res=[25,25,25], 
-               resources_directory=resources_directory)
+               directory=resources_directory)
     
     # alignment of resampled to autofluorescence and to reference
     alignment(rerun=False)
@@ -263,6 +288,9 @@ if __name__ == "__main__":
                              threshold_detection=shape_detection_threshold,
                              thresholds_filtering=thresholds_filt, 
                              debugging=True)
+    
+    visualization_cell_statistics(threshold_detection=shape_detection_threshold,
+                                  directory=resources_directory)
   
     
     
