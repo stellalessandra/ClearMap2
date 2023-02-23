@@ -4,6 +4,8 @@ sys.path.append('/data01/astella/ClearMap2')
 from ClearMap.Environment import *  #analysis:ignore
 import argparse
 import os
+import numpy.lib.recfunctions as rfn
+import scipy.io
 
 def convert_data_to_numpy(rerun=False):
     if rerun and not os.path.exists(directory+'stitched.npy'):
@@ -238,7 +240,123 @@ def visualization_cell_statistics(threshold_detection, directory,
               plt.savefig(directory+'figures/filtering_stats.png')
       # Decide where to save plot
       
+      
+def transformation(coordinates):
+    coordinates = res.resample_points(
+                    coordinates, sink=None, orientation=None, 
+                    source_shape=io.shape(ws.filename('stitched')), 
+                    sink_shape=io.shape(ws.filename('resampled')))
     
+    coordinates = elx.transform_points(
+                    coordinates, sink=None, 
+                    transform_directory=ws.filename('resampled_to_auto'), 
+                    binary=True, indices=False)
+    
+    coordinates = elx.transform_points(
+                    coordinates, sink=None, 
+                    transform_directory=ws.filename('auto_to_reference'),
+                    binary=True, indices=False)
+    return coordinates
+     
+
+def cell_alignment_and_annotation(threshold_detection, orientation):
+      # cell alignment
+      source = ws.source('cells', postfix='filtered'+str(threshold_detection))
+      coordinates = np.array([source[c] for c in 'xyz']).T
+      coordinates_transformed = transformation(coordinates)
+      # cell annotation
+      # set the common annotation file
+      annotation_file, reference_file, \
+      distance_file=ano.prepare_annotation_files(
+              slicing=(slice(None),slice(None),slice(1,256)), 
+              orientation=orientation,
+              overwrite=False, verbose=True)
+      
+      label = ano.label_points(coordinates_transformed,
+                               annotation_file=annotation_file, key='order')
+      names = ano.convert_label(label, key='order', value='name')
+      # save results
+      coordinates_transformed.dtype=[(t,float) for t in ('xt','yt','zt')]
+      label = np.array(label, dtype=[('order', int)]);
+      names = np.array(names, dtype=[('name' , 'U256')])
+      cells_data = rfn.merge_arrays([source[:], coordinates_transformed, 
+                                     label, names], flatten=True, 
+      usemask=False)
+  
+      io.write(ws.filename('cells'), cells_data)
+
+
+def export_csv():
+    source = ws.source('cells')
+    header = ', '.join([h[0] for h in source.dtype.names])
+    np.savetxt(ws.filename('cells', extension='csv'), source[:], header=header, 
+               delimiter=',', fmt='%s')
+    
+    
+def export_clearmap1():
+    print("Exporting ClearMap1 file...")
+    source = ws.source('cells')
+    clearmap1_format = {'points' : ['x', 'y', 'z'], 
+                       'points_transformed' : ['xt', 'yt', 'zt'],
+                      ' intensities' : ['source', 'dog', 'background', 'size']}
+    for filename, names in clearmap1_format.items():
+        sink = ws.filename('cells', postfix=['ClearMap1', filename])
+        data = np.array([source[name] if name in source.dtype.names else np.full(source.shape[0], np.nan) for name in names])
+        io.write(sink, data)
+    
+    
+def export_matlab(threshold_detection):
+    print("Exporting matlab file...")
+    matStructure = {}
+    values = np.load(ws.filename('cells'))  #load the cells.npy file containing all the saved data
+    variable = os.path.splitext('cells.npy')[0]  #remove the .npy extenstion
+    variable = variable.lstrip('0123456789.-_ ')  # -- Might not be necessary -- check that all names starts with a number/letter
+    matStructure[variable] = values  #load the values in the structure
+    filename = directory + 'cells'+str(threshold_detection)+'Mat' + '.mat' #define the location and name of the mat file
+    scipy.io.savemat(filename, matStructure) #generate and save the .mat file
+    
+    
+def voxelization(orientation, method='sphere', radius=(7,7,7)):
+    print("Voxelization...")
+    source = ws.source('cells')
+    coordinates = np.array([source[n] for n in ['xt','yt','zt']]).T
+    intensities = source['source']
+  
+    #  To compare data from different animals we need to move coordinates back to the same reference atlas
+    annotation_file, reference_file, distance_file=ano.prepare_annotation_files(
+      slicing=(slice(None),slice(None),slice(1,256)), orientation=orientation,
+      overwrite=False, verbose=True)
+    
+    # Unweighted
+    voxelization_parameter = dict(
+        shape = io.shape(annotation_file), 
+        dtype = None, 
+        weights = None,
+        method = method, 
+        radius = radius, 
+        kernel = None, 
+        processes = None, 
+        verbose = True
+      )
+    vox.voxelize(coordinates, sink=ws.filename('density', postfix='counts'), 
+                 **voxelization_parameter)
+    
+    # Weighted
+    voxelization_parameter = dict(
+        shape = io.shape(annotation_file),
+        dtype = None, 
+        weights = intensities,
+        method = method, 
+        radius = radius, 
+        kernel = None, 
+        processes = None, 
+        verbose = True
+      )
+    vox.voxelize(coordinates, 
+                 sink=ws.filename('density', postfix='intensities'), 
+                 **voxelization_parameter)
+  
+  
 
 if __name__ == "__main__":
     # parsing name of the folder
@@ -283,6 +401,7 @@ if __name__ == "__main__":
       'source' : (10,5000),
       'size'   : (20,100)
       }
+    orientation = (1,2,3)
     
     cell_detection_filtering(slicing=slicing, shape=shape_param, 
                              threshold_detection=shape_detection_threshold,
@@ -291,6 +410,17 @@ if __name__ == "__main__":
     
     visualization_cell_statistics(threshold_detection=shape_detection_threshold,
                                   directory=resources_directory)
+    
+    cell_alignment_and_annotation(threshold_detection=shape_detection_threshold, 
+                                  orientation=orientation)
+    
+    # exports
+    export_csv()
+    export_clearmap1()
+    export_matlab(threshold_detection=shape_detection_threshold)
+    
+    # voxelization
+    voxelization(orientation, method='sphere', radius=(7,7,7))
   
     
     
