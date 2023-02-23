@@ -1,0 +1,33 @@
+# User
+user : 'astella'
+# Experiment
+experiment : 'SexualImprinting'
+# Experimental group
+experimental_group : 'C57_MaleUrine_Exposure_cFos'
+# mouse
+mouse : ['F1Control']
+
+# resampling parameters
+source_res : [1.626, 1.626, 5]
+sink_res : [25,25,25]
+
+# orientation of the brain
+orientation : (1,2,3)
+
+# test data parameters
+# slicing
+slice_x : [2900, 3100]
+slice_y : [4120, 4320]
+slice_z : [620,650]
+
+# parameters for detection
+shape_param : (7,7)
+shape_detection_threshold : 700
+
+# parameters for filtering
+source : (10, 5000)
+size : (20,100)
+
+# parameters for voxelization
+method : 'sphere'
+radius : (7,7,7)
