@@ -6,6 +6,8 @@ import numpy.lib.recfunctions as rfn
 import os
 import argparse
 import sys
+import yaml
+from yaml import Loader
 sys.path.append('/data01/astella/ClearMap2')
 
 
@@ -385,19 +387,43 @@ def voxelization(orientation, method='sphere', radius=(7, 7, 7)):
 
 
 if __name__ == "__main__":
+
+    with open("configfile.yaml", 'r') as stream:
+        config = yaml.load(stream, Loader=Loader)
+
+    user = config['user']
+    experiment = config['experiment']
+    experimental_group = config['experimental_group']
+    source_res = config['source_res']
+    sink_res = config['sink_res']
+    orientation = config['orientation']
+    slice_x = config['slice_x']
+    slice_y = config['slice_y']
+    slice_z = config['slice_z']
+    shape_param = config['shape_param']
+    shape_detection_threshold = config['shape_detection_threshold']
+    source = config['source']
+    size = config['size']
+    method = config['method']
+    radius = config['radius']
+    rerun_alignment = config['rerun_alignment']
+    debug_detection = config['debug_detection']
+
     # parsing name of the folder
     parser = argparse.ArgumentParser(
-        description='user')
+        description='subject')
     parser.add_argument(
-        'user',
-        metavar='user',
+        'subject',
+        metavar='subject',
         type=str,
-        help='usually in form of initial+surname (username in SuperBrain)')
+        help='mouse which is analyzed in batch file')
     args = parser.parse_args()
-    user = args.user
+    subject = args.user
+
+
     sys.path.append('/data01/' + user)
-    directory = '/data01/' + user + \
-        '/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F1Control/'
+    directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+                + experimental_group + '/'+ subject + '/'
 
     # TODO: what about this?
     expression_raw = 'cFos/Z<Z,4> .tif'
@@ -415,26 +441,23 @@ if __name__ == "__main__":
     convert_data_to_numpy()
 
     # resampling of autofluorescence
-    resampling(source_res=[1.626, 1.626, 5], sink_res=[25, 25, 25],
+    resampling(source_res=source_res, sink_res=sink_res,
                directory=resources_directory)
 
     # alignment of resampled to autofluorescence and to reference
-    alignment(rerun=False)
+    alignment(rerun=rerun_alignment)
 
     # Create test data and debug
-    slicing = (slice(2900, 3100), slice(4120, 4320), slice(620, 650))
-    shape_param = (7, 7)
-    shape_detection_threshold = 700
+    slicing = (slice_x, slice_y, slice_z)
     thresholds_filt = {
-        'source': (10, 5000),
-        'size': (20, 100)
+        'source': source,
+        'size': size
     }
-    orientation = (1, 2, 3)
 
     cell_detection_filtering(slicing=slicing, shape=shape_param,
                              threshold_detection=shape_detection_threshold,
                              thresholds_filtering=thresholds_filt,
-                             debugging=True)
+                             debugging=debug_detection)
 
     visualization_cell_statistics(
         threshold_detection=shape_detection_threshold,
@@ -450,4 +473,4 @@ if __name__ == "__main__":
     export_matlab(threshold_detection=shape_detection_threshold)
 
     # voxelization
-    voxelization(orientation, method='sphere', radius=(7, 7, 7))
+    voxelization(orientation, method=method, radius=radius)

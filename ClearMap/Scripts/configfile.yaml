@@ -5,7 +5,7 @@ experiment : 'SexualImprinting'
 # Experimental group
 experimental_group : 'C57_MaleUrine_Exposure_cFos'
 # mouse
-mouse : ['F1Control']
+subjects : ['F1Control']
 
 # resampling parameters
 source_res : [1.626, 1.626, 5]
@@ -31,3 +31,7 @@ size : (20,100)
 # parameters for voxelization
 method : 'sphere'
 radius : (7,7,7)
+
+# rerun and debugging options
+rerun_alignment : False
+debug_detection : True
