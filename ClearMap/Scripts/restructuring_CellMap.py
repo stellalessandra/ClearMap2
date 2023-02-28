@@ -1,14 +1,14 @@
 # %% Initialize workspace
+import sys
+sys.path.append('/data01/astella/ClearMap2')
 from ClearMap.Environment import *  # analysis:ignore
 import scipy.io
 import numpy as np
 import numpy.lib.recfunctions as rfn
 import os
 import argparse
-import sys
 import yaml
 from yaml import Loader
-sys.path.append('/data01/astella/ClearMap2')
 
 
 def convert_data_to_numpy(rerun=False):
