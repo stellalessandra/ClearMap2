@@ -388,7 +388,7 @@ def voxelization(orientation, method='sphere', radius=(7, 7, 7)):
 
 if __name__ == "__main__":
 
-    with open("configfile.yaml", 'r') as stream:
+    with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
         config = yaml.load(stream, Loader=Loader)
 
     user = config['user']
@@ -418,7 +418,7 @@ if __name__ == "__main__":
         type=str,
         help='mouse which is analyzed in batch file')
     args = parser.parse_args()
-    subject = args.user
+    subject = args.subject
 
 
     sys.path.append('/data01/' + user)
