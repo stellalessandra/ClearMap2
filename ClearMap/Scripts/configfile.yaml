@@ -5,14 +5,14 @@ experiment : 'SexualImprinting'
 # Experimental group
 experimental_group : 'C57_MaleUrine_Exposure_cFos'
 # mouse
-subjects : ['F1Control']
+subjects : ['F1Control', 'F2Unfam']
 
 # resampling parameters
 source_res : [1.626, 1.626, 5]
 sink_res : [25,25,25]
 
 # orientation of the brain
-orientation : (1,2,3)
+orientation : [1,2,3]
 
 # test data parameters
 # slicing
@@ -21,17 +21,17 @@ slice_y : [4120, 4320]
 slice_z : [620,650]
 
 # parameters for detection
-shape_param : (7,7)
+shape_param : !!python/tuple [7,7]
 shape_detection_threshold : 700
 
 # parameters for filtering
-source : (10, 5000)
-size : (20,100)
+source : !!python/tuple [10, 5000]
+size : !!python/tuple [20,100]
 
 # parameters for voxelization
 method : 'sphere'
-radius : (7,7,7)
+radius : [7,7,7]
 
 # rerun and debugging options
-rerun_alignment : False
-debug_detection : True
+rerun_alignment : True
+debug_detection : False
