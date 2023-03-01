@@ -230,6 +230,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
         print("plotting...")
         visualization_filtering(threshold_detection)
     else:
+        print('Doing the detection...')
         # doing cell detection
         cells.detect_cells(
             ws.filename('stitched'),
@@ -238,6 +239,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
                 postfix=str(threshold_detection)),
             cell_detection_parameter=cell_detection_parameter,
             processing_parameter=processing_parameter)
+        print('Doing the filtering...')
         # cell filtering
         cells.filter_cells(
             source=ws.filename(
