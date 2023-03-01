@@ -13,7 +13,7 @@ import time
 
 
 def convert_data_to_numpy(rerun=False):
-    if rerun and not os.path.exists(directory + 'stitched.npy'):
+    if rerun or not os.path.exists(directory + 'stitched.npy'):
         print("Converting data to stitched file...")
         source = ws.source('raw')
         # TODO: check if stitched file exists already
@@ -39,7 +39,7 @@ def resampling(source_res, sink_res, directory, rerun=False):
         "processes": 4,
         "verbose": False,
     }
-    if rerun and not os.path.exists(directory + 'resampled.npy'):
+    if rerun or not os.path.exists(directory + 'resampled.npy'):
         io.delete_file(ws.filename('resampled'))
         res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
                      **resample_parameter)
@@ -74,7 +74,7 @@ def alignment_resampled_to_autofluorescence(align_channels_affine_file,
                                             rerun):
     print("Aligning resampled data to autofluorescence file")
 
-    if rerun and not os.path.exists(directory +
+    if rerun or not os.path.exists(directory +
                                     'elastix_resampled_to_auto/results0.zraw'):
         # align the two channels
         align_channels_parameter = {
@@ -100,7 +100,7 @@ def alignment_autofluorescence_to_reference(reference_file,
                                             directory,
                                             rerun):
     print("Aligning autofluorescence file to reference file")
-    if rerun and not os.path.exists(directory +
+    if rerun or not os.path.exists(directory +
                                     'elastix_auto_to_reference/results0.zraw'):
         # align autofluorescence to reference
         align_reference_parameter = {
@@ -390,7 +390,8 @@ def voxelization(orientation, method='sphere', radius=(7, 7, 7)):
 if __name__ == "__main__":
     
     print('Starting the analysis', time.time())
-    times = [0]
+    initial_time = time.time()
+    times = []
 
     with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
         config = yaml.load(stream, Loader=Loader)
@@ -410,7 +411,7 @@ if __name__ == "__main__":
     size = config['size']
     method = config['method']
     radius = tuple(config['radius'])
-    rerun_alignment = config['rerun_alignment']
+    rerun = config['rerun']
     debug_detection = config['debug_detection']
 
     # parsing name of the folder
@@ -426,10 +427,18 @@ if __name__ == "__main__":
 
 
     sys.path.append('/data01/' + user)
+    # makedir here with subject
     directory = '/data01/' + user + '/Projects/' + experiment + '/' \
                 + experimental_group + '/'+ subject + '/'
-
-    # TODO: what about this?
+                
+    # make directories needed for project
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    for folder in ['Auto', 'cFos', 'elastix_auto_to_reference', 
+                   'elastix_resampled_to_auto']:
+        if not os.path.exists(directory+folder):
+            os.makedirs(directory+folder)
+            
     expression_raw = 'cFos/Z<Z,4> .tif'
     expression_auto = 'Auto/Z<Z,4> .tif'
 
@@ -442,17 +451,17 @@ if __name__ == "__main__":
     resources_directory = settings.resources_path
 
     # convertion of data to numpy
-    convert_data_to_numpy()
+    convert_data_to_numpy(rerun=rerun)
 
     # resampling of autofluorescence
     resampling(source_res=source_res, sink_res=sink_res,
                directory=resources_directory)
     
-    print('Resampling done', time.time() - times[-1])
-    times.append(time.time() - times[-1])
+    print('Resampling done', time.time() - initial_time)
+    times.append(time.time() - initial_time)
 
     # alignment of resampled to autofluorescence and to reference
-    alignment(rerun=rerun_alignment)
+    alignment(rerun=rerun)
     
     print('Alignment done', time.time() - times[-1])
     times.append(time.time() - times[-1])
@@ -494,3 +503,4 @@ if __name__ == "__main__":
     print('Detection and filtering done', time.time() - times[-1])
     times.append(time.time() - times[-1])
     np.save('ClearMap/Scripts/times'+subject, times)
+    np.save(directory+'params', config)

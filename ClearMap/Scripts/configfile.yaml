@@ -6,7 +6,7 @@ experiment : 'SexualImprinting'
 experimental_group : 'C57_MaleUrine_Exposure_cFos'
 # mouse: use only when doing a batch analysis. Otherwise run the analysis 
 # script with subject string (ex. python restructuring_CellMap.py 'F1Control')
-subjects : ['F1Control', 'F2Unfam']
+subjects : ['F3Fam']
 
 # resampling parameters
 source_res : [1.626, 1.626, 5]
@@ -34,5 +34,5 @@ method : 'sphere'
 radius : [7,7,7]
 
 # rerun and debugging options
-rerun_alignment : True
+rerun : True
 debug_detection : False
