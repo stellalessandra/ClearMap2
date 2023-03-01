@@ -4,7 +4,8 @@ user : 'astella'
 experiment : 'SexualImprinting'
 # Experimental group
 experimental_group : 'C57_MaleUrine_Exposure_cFos'
-# mouse
+# mouse: use only when doing a batch analysis. Otherwise run the analysis 
+# script with subject string (ex. python restructuring_CellMap.py 'F1Control')
 subjects : ['F1Control', 'F2Unfam']
 
 # resampling parameters
