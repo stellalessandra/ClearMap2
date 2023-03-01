@@ -39,10 +39,19 @@ def resampling(source_res, sink_res, directory, rerun=False):
         "processes": 4,
         "verbose": False,
     }
+    resample_parameter_auto = {
+      "source_resolution" : (source_res[0], source_res[1], source_res[2]*2),
+      "sink_resolution"   : (sink_res[0], sink_res[1], sink_res[2]),
+      "processes" : 4,
+      "verbose" : False,                
+      };
     if rerun or not os.path.exists(directory + 'resampled.npy'):
         io.delete_file(ws.filename('resampled'))
         res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
                      **resample_parameter)
+        res.resample(ws.filename('autofluorescence'), 
+                     sink=ws.filename('resampled', postfix='autofluorescence'), 
+                     **resample_parameter_auto)
     else:
         print("Resampling has already been done!")
 
