@@ -9,6 +9,7 @@ import os
 import argparse
 import yaml
 from yaml import Loader
+import time
 
 
 def convert_data_to_numpy(rerun=False):
@@ -58,10 +59,10 @@ def initialization_alignment(directory):
                                          'Alignment/align_affine.txt')
     align_reference_affine_file = io.join(directory,
                                           'Alignment/align_affine.txt')
-#    align_reference_bspline_file = io.join(resources_directory,
-#                                           'Alignment/align_bspline.txt')
-    align_reference_bspline_file = io.join(directory,
-                                           'Alignment/align_bsplineTest.txt')
+    align_reference_bspline_file = io.join(resources_directory,
+                                           'Alignment/align_bspline.txt')
+#    align_reference_bspline_file = io.join(directory,
+#                                           'Alignment/align_bsplineTest.txt')
 
     return annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
@@ -187,7 +188,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
         size_max=20,  # 100, #35,20
         size_min=11,  # 30, #30,11
         overlap=10,  # 32, #10,
-        verbose=True
+        verbose=False
     )
 
     # doing cell detection
@@ -292,7 +293,7 @@ def cell_alignment_and_annotation(threshold_detection, orientation):
         distance_file = ano.prepare_annotation_files(
             slicing=(slice(None), slice(None), slice(1, 256)),
             orientation=orientation,
-            overwrite=False, verbose=True)
+            overwrite=False, verbose=False)
 
     label = ano.label_points(coordinates_transformed,
                              annotation_file=annotation_file, key='order')
@@ -387,6 +388,9 @@ def voxelization(orientation, method='sphere', radius=(7, 7, 7)):
 
 
 if __name__ == "__main__":
+    
+    print('Starting the analysis', time.time())
+    times = [0]
 
     with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
         config = yaml.load(stream, Loader=Loader)
@@ -396,7 +400,7 @@ if __name__ == "__main__":
     experimental_group = config['experimental_group']
     source_res = config['source_res']
     sink_res = config['sink_res']
-    orientation = config['orientation']
+    orientation = tuple(config['orientation'])
     slice_x = config['slice_x']
     slice_y = config['slice_y']
     slice_z = config['slice_z']
@@ -405,7 +409,7 @@ if __name__ == "__main__":
     source = config['source']
     size = config['size']
     method = config['method']
-    radius = config['radius']
+    radius = tuple(config['radius'])
     rerun_alignment = config['rerun_alignment']
     debug_detection = config['debug_detection']
 
@@ -443,9 +447,15 @@ if __name__ == "__main__":
     # resampling of autofluorescence
     resampling(source_res=source_res, sink_res=sink_res,
                directory=resources_directory)
+    
+    print('Resampling done', time.time() - times[-1])
+    times.append(time.time() - times[-1])
 
     # alignment of resampled to autofluorescence and to reference
     alignment(rerun=rerun_alignment)
+    
+    print('Alignment done', time.time() - times[-1])
+    times.append(time.time() - times[-1])
 
     # Create test data and debug
     slicing = (slice_x, slice_y, slice_z)
@@ -459,6 +469,9 @@ if __name__ == "__main__":
                              thresholds_filtering=thresholds_filt,
                              debugging=debug_detection)
 
+    print('Detection and filtering done', time.time() - times[-1])
+    times.append(time.time() - times[-1])
+
     visualization_cell_statistics(
         threshold_detection=shape_detection_threshold,
         directory=resources_directory)
@@ -466,6 +479,9 @@ if __name__ == "__main__":
     cell_alignment_and_annotation(
         threshold_detection=shape_detection_threshold,
         orientation=orientation)
+    
+    print('Cell alignment and annotation done', time.time() - times[-1])
+    times.append(time.time() - times[-1])
 
     # exports
     export_csv()
@@ -474,3 +490,7 @@ if __name__ == "__main__":
 
     # voxelization
     voxelization(orientation, method=method, radius=radius)
+    
+    print('Detection and filtering done', time.time() - times[-1])
+    times.append(time.time() - times[-1])
+    np.save('ClearMap/Scripts/times'+subject, times)
