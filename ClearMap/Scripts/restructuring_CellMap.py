@@ -253,7 +253,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
 
 
 def visualization_cell_statistics(threshold_detection, directory,
-                                  show=True):
+                                  show=False):
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
     plt.figure(1)
     plt.clf()
@@ -272,7 +272,7 @@ def visualization_cell_statistics(threshold_detection, directory,
         else:
             mkdirp(directory + 'figures/')
             plt.savefig(directory + 'figures/filtering_stats.png')
-    # Decide where to save plot
+
 
 
 def transformation(coordinates):
