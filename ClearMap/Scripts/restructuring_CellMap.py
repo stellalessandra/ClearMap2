@@ -12,7 +12,7 @@ from yaml import Loader
 import time
 
 
-def convert_data_to_numpy(rerun=False):
+def convert_data_to_numpy(ws, rerun=False):
     if rerun or not os.path.exists(directory + 'stitched.npy'):
         print("Converting data to stitched file...")
         source = ws.source('raw')
@@ -25,7 +25,7 @@ def convert_data_to_numpy(rerun=False):
         print("Stitching has already been done!")
 
 
-def resampling(source_res, sink_res, directory, rerun=False):
+def resampling(ws, source_res, sink_res, directory, rerun=False):
     """
     Parameters
     ----------
@@ -78,7 +78,8 @@ def initialization_alignment(directory):
         align_reference_bspline_file
 
 
-def alignment_resampled_to_autofluorescence(align_channels_affine_file,
+def alignment_resampled_to_autofluorescence(ws, 
+                                            align_channels_affine_file,
                                             directory,
                                             rerun):
     print("Aligning resampled data to autofluorescence file")
@@ -103,7 +104,8 @@ def alignment_resampled_to_autofluorescence(align_channels_affine_file,
         print("Already done!")
 
 
-def alignment_autofluorescence_to_reference(reference_file,
+def alignment_autofluorescence_to_reference(ws, 
+                                            reference_file,
                                             align_reference_affine_file,
                                             align_reference_bspline_file,
                                             directory,
@@ -129,7 +131,7 @@ def alignment_autofluorescence_to_reference(reference_file,
         print("Already done!")
 
 
-def alignment(rerun=False):
+def alignment(ws, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -139,25 +141,27 @@ def alignment(rerun=False):
         align_channels_affine_file, align_reference_affine_file, \
         align_reference_bspline_file = initialization_alignment(resources_directory)
 
-    alignment_resampled_to_autofluorescence(align_channels_affine_file,
+    alignment_resampled_to_autofluorescence(ws,
+                                            align_channels_affine_file,
                                             directory,
                                             rerun)
 
-    alignment_autofluorescence_to_reference(reference_file,
+    alignment_autofluorescence_to_reference(ws, 
+                                            reference_file,
                                             align_reference_affine_file,
                                             align_reference_bspline_file,
                                             directory,
                                             rerun)
 
 
-def create_test_data(slicing):
+def create_test_data(ws, slicing):
     # select sublice for testing the pipeline
     ws.create_debug('stitched', slicing=slicing)
     ws.debug = False
     io.mhd.write_header_from_source(ws.filename('stitched', prefix='debug'))
 
 
-def visualization_filtering(threshold_detection):
+def visualization_filtering(ws, threshold_detection):
     # visualization of filtering for test debug data
     coordinates = np.hstack([ws.source('cells',
                                        postfix='filtered_' + str(threshold_detection),
@@ -172,7 +176,7 @@ def visualization_filtering(threshold_detection):
     plt.show()
 
 
-def cell_detection_filtering(slicing, shape, threshold_detection,
+def cell_detection_filtering(ws, slicing, shape, threshold_detection,
                              thresholds_filtering, debugging=True):
     cell_detection_parameter = cells.default_cell_detection_parameter.copy()
     cell_detection_parameter['illumination_correction'] = None
@@ -228,7 +232,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
                 prefix='debug'),
             thresholds=thresholds_filtering)
         print("plotting...")
-        visualization_filtering(threshold_detection)
+        visualization_filtering(ws, threshold_detection)
     else:
         print('Doing the detection...')
         # doing cell detection
@@ -252,7 +256,7 @@ def cell_detection_filtering(slicing, shape, threshold_detection,
             thresholds=thresholds_filtering)
 
 
-def visualization_cell_statistics(threshold_detection, directory,
+def visualization_cell_statistics(ws, threshold_detection, directory,
                                   show=False):
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
     plt.figure(1)
@@ -270,12 +274,12 @@ def visualization_cell_statistics(threshold_detection, directory,
         if os.path.exists(directory + 'figures/'):
             plt.savefig(directory + 'figures/filtering_stats.png')
         else:
-            mkdirp(directory + 'figures/')
+            os.mkdir(directory + 'figures/')
             plt.savefig(directory + 'figures/filtering_stats.png')
 
 
 
-def transformation(coordinates):
+def transformation(ws, coordinates):
     coordinates = res.resample_points(
         coordinates, sink=None, orientation=None,
         source_shape=io.shape(ws.filename('stitched')),
@@ -293,11 +297,11 @@ def transformation(coordinates):
     return coordinates
 
 
-def cell_alignment_and_annotation(threshold_detection, orientation):
+def cell_alignment_and_annotation(ws, threshold_detection, orientation):
     # cell alignment
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
     coordinates = np.array([source[c] for c in 'xyz']).T
-    coordinates_transformed = transformation(coordinates)
+    coordinates_transformed = transformation(ws, coordinates)
     # cell annotation
     # set the common annotation file
     annotation_file, reference_file, \
@@ -320,14 +324,14 @@ def cell_alignment_and_annotation(threshold_detection, orientation):
     io.write(ws.filename('cells'), cells_data)
 
 
-def export_csv():
+def export_csv(ws):
     source = ws.source('cells')
     header = ', '.join([h[0] for h in source.dtype.names])
     np.savetxt(ws.filename('cells', extension='csv'), source[:], header=header,
                delimiter=',', fmt='%s')
 
 
-def export_clearmap1():
+def export_clearmap1(ws):
     print("Exporting ClearMap1 file...")
     source = ws.source('cells')
     clearmap1_format = {
@@ -342,7 +346,7 @@ def export_clearmap1():
         io.write(sink, data)
 
 
-def export_matlab(threshold_detection):
+def export_matlab(ws, threshold_detection, directory):
     print("Exporting matlab file...")
     matStructure = {}
     # load the cells.npy file containing all the saved data
@@ -356,7 +360,7 @@ def export_matlab(threshold_detection):
     scipy.io.savemat(filename, matStructure)  # generate and save the .mat file
 
 
-def voxelization(orientation, method='sphere', radius=(7, 7, 7)):
+def voxelization(ws, orientation, method='sphere', radius=(7, 7, 7)):
     print("Voxelization...")
     source = ws.source('cells')
     coordinates = np.array([source[n] for n in ['xt', 'yt', 'zt']]).T
@@ -462,17 +466,17 @@ if __name__ == "__main__":
     resources_directory = settings.resources_path
 
     # convertion of data to numpy
-    convert_data_to_numpy(rerun=rerun)
+    convert_data_to_numpy(ws=ws, rerun=rerun)
 
     # resampling of autofluorescence
-    resampling(source_res=source_res, sink_res=sink_res,
+    resampling(ws=ws, source_res=source_res, sink_res=sink_res,
                directory=resources_directory)
     
     print('Resampling done', time.time() - initial_time)
     times.append(time.time() - initial_time)
 
     # alignment of resampled to autofluorescence and to reference
-    alignment(rerun=rerun)
+    alignment(ws=ws, rerun=rerun)
     
     print('Alignment done', time.time() - times[-1])
     times.append(time.time() - times[-1])
@@ -484,7 +488,7 @@ if __name__ == "__main__":
         'size': size
     }
 
-    cell_detection_filtering(slicing=slicing, shape=shape_param,
+    cell_detection_filtering(ws=ws, slicing=slicing, shape=shape_param,
                              threshold_detection=shape_detection_threshold,
                              thresholds_filtering=thresholds_filt,
                              debugging=debug_detection)
@@ -492,11 +496,11 @@ if __name__ == "__main__":
     print('Detection and filtering done', time.time() - times[-1])
     times.append(time.time() - times[-1])
 
-    visualization_cell_statistics(
+    visualization_cell_statistics(ws=ws, 
         threshold_detection=shape_detection_threshold,
         directory=resources_directory)
 
-    cell_alignment_and_annotation(
+    cell_alignment_and_annotation(ws=ws, 
         threshold_detection=shape_detection_threshold,
         orientation=orientation)
     
@@ -504,12 +508,13 @@ if __name__ == "__main__":
     times.append(time.time() - times[-1])
 
     # exports
-    export_csv()
-    export_clearmap1()
-    export_matlab(threshold_detection=shape_detection_threshold)
+    export_csv(ws=ws)
+    export_clearmap1(ws=ws)
+    export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
+                  directory=directory)
 
     # voxelization
-    voxelization(orientation, method=method, radius=radius)
+    voxelization(ws=ws, orientation=orientation, method=method, radius=radius)
     
     print('Detection and filtering done', time.time() - times[-1])
     times.append(time.time() - times[-1])
