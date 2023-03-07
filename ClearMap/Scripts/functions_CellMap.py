@@ -68,7 +68,7 @@ def initialization_alignment(directory):
                                          'Alignment/align_affine.txt')
     align_reference_affine_file = io.join(directory,
                                           'Alignment/align_affine.txt')
-    align_reference_bspline_file = io.join(resources_directory,
+    align_reference_bspline_file = io.join(directory,
                                            'Alignment/align_bspline.txt')
 #    align_reference_bspline_file = io.join(directory,
 #                                           'Alignment/align_bsplineTest.txt')
