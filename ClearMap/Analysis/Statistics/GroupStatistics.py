@@ -44,7 +44,7 @@ def t_test_voxelization(group1, group2, signed = False, remove_nan = True, p_cut
   group1 = read_group(group1);  
   group2 = read_group(group2);  
   
-  tvals, pvals = stats.ttest_ind(group2, group2, axis=0, equal_var=True);
+  tvals, pvals = stats.ttest_ind(group1, group2, axis=0, equal_var=True);
 
   #remove nans
   if remove_nan: 
@@ -217,10 +217,10 @@ def weights_from_precentiles(intensities, percentiles = [25,50,75,100]):
 def count_points_group_in_regions(point_group, annotation_file = ano.default_annotation_file, weight_group = None, invalid = 0, hierarchical = True):
   """Generates a table of counts for the various point datasets in pointGroup"""
 
-  if intensity_group is None: 
-    counts = [ano.count_points(point_group[i], annotation_file=annotation_file, invalid=invalid, hierarchical=heirarchical) for i in range(len(point_group))];
+  if weight_group is None: 
+    counts = [ano.count_points(point_group[i], annotation_file=annotation_file, invalid=invalid, hierarchical=hierarchical) for i in range(len(point_group))];
   else:
-    counts = [ano.count_points(point_group[i], weight=weight_group[i], annotation_file=annotation_file, invalid=invalid, hierarchical=heirarchical) for i in range(len(point_group))];
+    counts = [ano.count_points(point_group[i], weight=weight_group[i], annotation_file=annotation_file, invalid=invalid, hierarchical=hierarchical) for i in range(len(point_group))];
   
   counts = np.vstack(counts).T;
 
@@ -235,7 +235,7 @@ def t_test_region_countss(counts1, counts2, annotation_file = ano.default_annota
   #ids, p1 = countPointsGroupInRegions(pointGroup1, labeledImage = labeledImage, withIds = True);
   #p2 = countPointsGroupInRegions(pointGroup2,  labeledImage = labeledImage, withIds = False);   
   
-  tvals, pvals = st.ttest_ind(counts1, counts2, axis=1, equal_var=equal_var);
+  tvals, pvals = stats.ttest_ind(counts1, counts2, axis=1, equal_var=equal_var);
   
   #remove nans
   if remove_nan: 

@@ -436,13 +436,16 @@ def label_points(points, annotation_file = None, invalid = 0, key = 'order', lev
   label : array
     Label of the points corresponding to the given key.
   """
+#  points=points[0,:,:]
+#  points=np.transpose(points,(1,0))
   n_points = points.shape[0];  
   n_dim = points.shape[1];
   
   if annotation_file is None:
     annotation_file = annotation.annotation_file;
   
-  atlas = io.read(annotation_file);   
+  atlas = io.read(annotation_file);
+  print (annotation_file)   
   atlas = np.array(atlas, dtype=int);
   atlas_shape = atlas.shape;
  
@@ -579,6 +582,9 @@ def count_points(points, weights = None, annotation_file = None, invalid = 0, hi
   bins : array
     The counts for each label.
   """
+  #Added to fix the issue with the variables
+  points=points[0,:,:]
+  points=np.transpose(points,(1,0))
   label = label_points(points, annotation_file=annotation_file, invalid=invalid, key='order');
   return count_label(label, weights=weights, key='order', hierarchical=hierarchical);
 
