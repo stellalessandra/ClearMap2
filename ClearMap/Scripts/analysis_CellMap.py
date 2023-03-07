@@ -93,7 +93,7 @@ resources_directory = settings.resources_path
 
 
 # convertion of data to numpy
-convert_data_to_numpy(ws=ws, rerun=rerun)
+convert_data_to_numpy(ws=ws, directory=directory, rerun=rerun)
 
 
 

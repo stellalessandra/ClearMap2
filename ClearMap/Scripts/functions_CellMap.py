@@ -12,7 +12,7 @@ from yaml import Loader
 import time
 
 
-def convert_data_to_numpy(ws, rerun=False):
+def convert_data_to_numpy(ws, directory, rerun=False):
     if rerun or not os.path.exists(directory + 'stitched.npy'):
         print("Converting data to stitched file...")
         source = ws.source('raw')
