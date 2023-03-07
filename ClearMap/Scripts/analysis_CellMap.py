@@ -107,7 +107,7 @@ times.append(time.time() - initial_time)
 
 
 # alignment of resampled to autofluorescence and to reference
-alignment(ws=ws, rerun=rerun)
+alignment(ws=ws, directory=resources_directory, rerun=rerun)
 
 print('Alignment done', time.time() - times[-1])
 times.append(time.time() - times[-1])
