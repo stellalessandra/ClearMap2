@@ -131,7 +131,7 @@ def alignment_autofluorescence_to_reference(ws,
         print("Already done!")
 
 
-def alignment(ws, rerun=False):
+def alignment(ws, directory, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -139,7 +139,7 @@ def alignment(ws, rerun=False):
     print("Doing the alignment...")
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
-        align_reference_bspline_file = initialization_alignment(resources_directory)
+        align_reference_bspline_file = initialization_alignment(directory)
 
     alignment_resampled_to_autofluorescence(ws,
                                             align_channels_affine_file,
