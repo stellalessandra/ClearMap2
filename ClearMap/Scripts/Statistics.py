@@ -32,33 +32,29 @@ Created on Thu Apr 29 10:56:36 2021
             '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F12Unfam/density_counts.tif',
             '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F14Unfam/density_counts.tif']
   
-  
-#First run the statistics over voxelized data for volumetric comparison          
-  g_control=gs.read_group(control)
-  g_fam=gs.read_group(fam)
-  g_unfam=gs.read_group(unfam)   
-
-
-  def t_test(group1, g1, group2, g2, label):       
+  def t_test(group1, group2, label1, label2): 
+      #First run the statistics over voxelized data for volumetric comparison 
+      g1 = gs.read_group(group1)
+      g2 = gs.read_group(group2)
       pvals, sign=gs.t_test_voxelization(group1, group2, signed = True, 
                                          remove_nan = True, p_cutoff = 0.05)
       
-      pvc=gs.color_p_values(pvals, sign, positive = [1,0], negative = [0,1], 
-                            p_cutoff = None, positive_trend = None, 
+      pvc=gs.color_p_values(pvals, sign, positive = [1,0], negative = [0,1], \
+                            p_cutoff = None, positive_trend = None, \
                             negative_trend = None, pmax = None)
       
       g1avg=gs.mean(g1)
       g2avg=gs.mean(g2)
       
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsNeg'+label+'.tif',pvc[:,:,:,0]) #Group2<Group1
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsPos'+label+'.tif',pvc[:,:,:,1]) #Group2>Group1
+      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsNeg-'+label1+'_'+label2+'.tif',pvc[:,:,:,0]) #Group2<Group1
+      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsPos-'+label1+'_'+label2+'.tif',pvc[:,:,:,1]) #Group2>Group1
       
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_Control'+label+'.tif',g1avg)
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_Exposed'+label+'.tif',g2avg)
+      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_'+label1+'.tif',g1avg)
+      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_'+label2+'.tif',g2avg)
 
-  t_test(group1=control, g1=g_control, group2=fam, g2=g_fam, label='control_vs_fam')
-  t_test(group1=control, g1=g_control, group2=unfam, g2=g_unfam, label='control_vs_unfam')
-  t_test(group1=fam, g1=g_fam, group2=unfam, g2=g_unfam, label='fam_vs_unfam')
+#  t_test(group1=control, group2=fam, label1='control', label2='fam')
+#  t_test(group1=control, group2=unfam, label1='control', label2='unfam')
+#  t_test(group1=fam, group2=unfam, label1='fam', label2='unfam')
   
  #%%
 #Run statistics over brain areas to find the ones with a significant difference
@@ -102,10 +98,11 @@ Created on Thu Apr 29 10:56:36 2021
                                                 annotation_file = annotation_file, 
                                                 signed = True, remove_nan = True,
                                                 p_cutoff = 0.05, equal_var = False)
+      return pvalreg, signreg, labels
       
-  test_brain_areas(points1=points_control, points2=points_fam)  
-  test_brain_areas(points1=points_unfam, points2=points_fam)  
-  test_brain_areas(points1=points_control, points2=points_unfam)  
+  pvalreg_control_fam, signreg_control_fam, labels = test_brain_areas(points1=points_control, points2=points_fam)  
+  pvalre_unfam_fam, signreg_unfam_fam, labels = test_brain_areas(points1=points_unfam, points2=points_fam)  
+  pvalreg_control_unfam, signreg_control_unfam, labels = test_brain_areas(points1=points_control, points2=points_unfam)  
 
   
   
