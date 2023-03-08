@@ -11,28 +11,33 @@ Created on Thu Apr 29 10:56:36 2021
   
   from ClearMap.Environment import *  #analysis:ignore
   import ClearMap.Analysis.Statistics.GroupStatistics as gs
+  import yaml
+  from yaml import Loader
+  with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
+    config = yaml.load(stream, Loader=Loader)
+
+  user = config['user']
+  experiment = config['experiment']
+  experimental_group = config['experimental_group']
+  subjects = config['subjects']
+  directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+            + experimental_group + '/'
+
   
+#%% T-test
+  control = [directory + subject + '/' + 'density_counts.tif' for subject in subjects if 'Control' in subject] 
+
+  fam = [directory + subject + '/' + 'density_counts.tif' for subject in subjects if 'Fam' in subject]     
+
+  unfam = [directory + subject + '/' + 'density_counts.tif' for subject in subjects if 'Unfam' in subject]   
   
-  control = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F1Control/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F10Control/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F11Control/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F16Control/density_counts.tif']          
+  control = control[0:3]
+  fam = fam[0:3]
+  unfam = unfam[0:3]
             
-  fam = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F3Fam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F5Fam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F7Fam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F9Fam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F13Fam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F15Fam/density_counts.tif']
+
   
-  unfam = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F2Unfam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F4Unfam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F6Unfam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F8Unfam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F12Unfam/density_counts.tif',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F14Unfam/density_counts.tif']
-  
-  def t_test(group1, group2, label1, label2): 
+  def t_test(group1, group2, label1, label2, directory): 
       #First run the statistics over voxelized data for volumetric comparison 
       g1 = gs.read_group(group1)
       g2 = gs.read_group(group2)
@@ -46,37 +51,25 @@ Created on Thu Apr 29 10:56:36 2021
       g1avg=gs.mean(g1)
       g2avg=gs.mean(g2)
       
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsNeg-'+label1+'_'+label2+'.tif',pvc[:,:,:,0]) #Group2<Group1
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/VoxelStatisticsPos-'+label1+'_'+label2+'.tif',pvc[:,:,:,1]) #Group2>Group1
+      io.write(directory+'VoxelStatisticsNeg-'+label1+'_'+label2+'.tif',pvc[:,:,:,0]) #Group2<Group1
+      io.write(directory+'VoxelStatisticsPos-'+label1+'_'+label2+'.tif',pvc[:,:,:,1]) #Group2>Group1
       
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_'+label1+'.tif',g1avg)
-      io.write('/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/AVG_'+label2+'.tif',g2avg)
+      io.write(directory+'AVG_'+label1+'.tif',g1avg)
+      io.write(directory+'AVG_'+label2+'.tif',g2avg)
 
-#  t_test(group1=control, group2=fam, label1='control', label2='fam')
-#  t_test(group1=control, group2=unfam, label1='control', label2='unfam')
-#  t_test(group1=fam, group2=unfam, label1='fam', label2='unfam')
+  t_test(group1=control, group2=fam, label1='control', label2='fam', directory=directory)
+  t_test(group1=control, group2=unfam, label1='control', label2='unfam', directory=directory)
+  t_test(group1=fam, group2=unfam, label1='fam', label2='unfam', directory=directory)
   
  #%%
 #Run statistics over brain areas to find the ones with a significant difference
  
-  control = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F1Control/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F10Control/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F11Control/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F16Control/cells_ClearMap1_points_transformed.npy']          
-            
-  fam = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F3Fam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F5Fam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F7Fam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F9Fam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F13Fam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F15Fam/cells_ClearMap1_points_transformed.npy']
-  
-  unfam = ['/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F2Unfam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F4Unfam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F6Unfam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F8Unfam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F12Unfam/cells_ClearMap1_points_transformed.npy',
-            '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F14Unfam/cells_ClearMap1_points_transformed.npy']
+  control = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Control' in subject] 
+
+  fam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Fam' in subject]     
+
+  unfam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Unfam' in subject]  
+ 
 
   points_control=gs.read_group(control, combine=False)
   points_fam=gs.read_group(fam, combine=False)
@@ -97,12 +90,12 @@ Created on Thu Apr 29 10:56:36 2021
       pvalreg, signreg=gs.t_test_region_countss(counts1, counts2, 
                                                 annotation_file = annotation_file, 
                                                 signed = True, remove_nan = True,
-                                                p_cutoff = 0.05, equal_var = False)
-      return pvalreg, signreg, labels
+                                                p_cutoff = 0.05/len(labels), equal_var = False)
+      return pvalreg, signreg, labels, counts1, counts2
       
-  pvalreg_control_fam, signreg_control_fam, labels = test_brain_areas(points1=points_control, points2=points_fam)  
-  pvalre_unfam_fam, signreg_unfam_fam, labels = test_brain_areas(points1=points_unfam, points2=points_fam)  
-  pvalreg_control_unfam, signreg_control_unfam, labels = test_brain_areas(points1=points_control, points2=points_unfam)  
+  pvalreg_control_fam, signreg_control_fam, labels, counts1cf, counts2cf = test_brain_areas(points1=points_control, points2=points_fam)  
+  pvalreg_unfam_fam, signreg_unfam_fam, labels, counts1uf, counts2uf = test_brain_areas(points1=points_unfam, points2=points_fam)  
+  pvalreg_control_unfam, signreg_control_unfam, labels, counts1cu, counts2cu = test_brain_areas(points1=points_control, points2=points_unfam)  
 
   
   
