@@ -48,38 +48,40 @@ thresholds_filt = {
     'size': size
 }
 
-# parsing name of the folder
-parser = argparse.ArgumentParser(
-    description='subject')
-parser.add_argument(
-    'subject',
-    metavar='subject',
-    type=str,
+
+if config['subjects'] == str:
+    subject = config['subjects]
+    print('Running analysis only on one subject')
+elif config['subjects'] == list:
+    parser = argparse.ArgumentParser(description='subject')
+    parser.add_argument('subject', metavar='subject', type=str,
     help='mouse which is analyzed in batch file')
-args = parser.parse_args()
-subject = args.subject
+    args = parser.parse_args()
+    subject = args.subject
+else:
+    raise TypeError('Wrong input subject parameter')
 
 
 sys.path.append('/data01/' + user)
 # makedir here with subject
-directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
             + experimental_group + '/'+ subject + '/'
             
             
 # make directories needed for project
-if not os.path.exists(directory):
-    os.makedirs(directory)
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
 for folder in ['Auto', 'cFos', 'elastix_auto_to_reference', 
                'elastix_resampled_to_auto']:
-    if not os.path.exists(directory+folder):
-        os.makedirs(directory+folder)
+    if not os.path.exists(data_directory+folder):
+        os.makedirs(data_directory+folder)
         
         
 # Workspace initialization
 expression_raw = 'cFos/Z<Z,4> .tif'
 expression_auto = 'Auto/Z<Z,4> .tif'
 
-ws = wsp.Workspace('CellMap', directory=directory)
+ws = wsp.Workspace('CellMap', directory=data_directory)
 ws.update(raw=expression_raw, autofluorescence=expression_auto)
 ws.info()
 ws.debug = False
@@ -93,13 +95,13 @@ resources_directory = settings.resources_path
 
 
 # convertion of data to numpy
-convert_data_to_numpy(ws=ws, directory=directory, rerun=rerun)
+convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
 
 
 
 # resampling of autofluorescence
 resampling(ws=ws, source_res=source_res, sink_res=sink_res,
-           directory=resources_directory)
+           directory=data_directory)
 
 print('Resampling done', time.time() - initial_time)
 times.append(time.time() - initial_time)
@@ -146,7 +148,7 @@ times.append(time.time() - times[-1])
 export_csv(ws=ws)
 export_clearmap1(ws=ws)
 export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
-              directory=directory)
+              directory=data_directory)
 
 
 
@@ -156,4 +158,4 @@ voxelization(ws=ws, orientation=orientation, method=method, radius=radius)
 print('Detection and filtering done', time.time() - times[-1])
 times.append(time.time() - times[-1])
 np.save('ClearMap/Scripts/times'+subject, times)
-np.save(directory+'params', config)
+np.save(data_directory+'params', config)

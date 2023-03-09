@@ -1,3 +1,5 @@
+# 
+
 # User
 user : 'astella'
 # Experiment
@@ -35,5 +37,5 @@ method : 'sphere'
 radius : [7,7,7]
 
 # rerun and debugging options
-rerun : False
+rerun_alignment : True
 debug_detection : True

@@ -196,6 +196,7 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
 #    cell_detection_parameter['maxima_detection']['h_max']=None;
 
     processing_parameter = cells.default_cell_detection_processing_parameter.copy()
+    # fix verbose here
     processing_parameter.update(
         processes=6,  # 'serial',6
         size_max=20,  # 100, #35,20
