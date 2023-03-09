@@ -50,7 +50,7 @@ thresholds_filt = {
 
 
 if config['subjects'] == str:
-    subject = config['subjects]
+    subject = config['subjects']
     print('Running analysis only on one subject')
 elif config['subjects'] == list:
     parser = argparse.ArgumentParser(description='subject')
