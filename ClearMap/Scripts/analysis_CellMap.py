@@ -38,7 +38,7 @@ source = config['source']
 size = config['size']
 method = config['method']
 radius = tuple(config['radius'])
-rerun = config['rerun']
+rerun = config['rerun_alignment']
 debug_detection = config['debug_detection']
 
 # Create test data and debug
