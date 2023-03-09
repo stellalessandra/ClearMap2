@@ -45,7 +45,7 @@ def resampling(ws, source_res, sink_res, directory, rerun=False):
       "processes" : 4,
       "verbose" : False,                
       };
-    if rerun or not os.path.exists(directory + 'resampled.npy'):
+    if rerun or not os.path.exists(directory + 'resampled.tif'):
         io.delete_file(ws.filename('resampled'))
         res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
                      **resample_parameter)
@@ -207,7 +207,7 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
     # doing cell detection
     if debugging:
         # creating test data
-        create_test_data(slicing)
+        create_test_data(ws, slicing)
         # doing cell detection
         cells.detect_cells(
             ws.filename(
