@@ -176,9 +176,7 @@ def visualization_filtering(ws, threshold_detection):
     plt.show()
 
 
-def cell_detection(ws, slicing, shape, threshold_detection,
-                   thresholds_filtering, debugging=True):
-    
+def cell_detection(ws, slicing, shape, threshold_detection, debugging=True):
     cell_detection_parameter = cells.default_cell_detection_parameter.copy()
     cell_detection_parameter['illumination_correction'] = None
     cell_detection_parameter['background_correction']['shape'] = shape
@@ -187,9 +185,7 @@ def cell_detection(ws, slicing, shape, threshold_detection,
 #    cell_detection_parameter['intensity_detection']['method'] = ['mean'];
     cell_detection_parameter['intensity_detection']['measure'] = ['source']
     cell_detection_parameter['shape_detection']['threshold'] = threshold_detection
-
 #    cell_detection_parameter['dog_filter']['shape']=None;
-
     io.delete_file(ws.filename('cells', postfix='maxima'))
 #    cell_detection_parameter['maxima_detection']['save'] = ws.filename('cells', postfix='maxima')
     cell_detection_parameter['maxima_detection']['save'] = None
@@ -233,34 +229,7 @@ def cell_detection(ws, slicing, shape, threshold_detection,
 
             
             
-def cell_filtering(ws, slicing, shape, threshold_detection,
-                             thresholds_filtering, debugging=True):
-    cell_detection_parameter = cells.default_cell_detection_parameter.copy()
-    cell_detection_parameter['illumination_correction'] = None
-    cell_detection_parameter['background_correction']['shape'] = shape
-#    cell_detection_parameter['background_correction']['save'] = ws.filename('stitched', postfix='background')
-    cell_detection_parameter['background_correction']['save'] = None
-#    cell_detection_parameter['intensity_detection']['method'] = ['mean'];
-    cell_detection_parameter['intensity_detection']['measure'] = ['source']
-    cell_detection_parameter['shape_detection']['threshold'] = threshold_detection
-
-#    cell_detection_parameter['dog_filter']['shape']=None;
-
-    io.delete_file(ws.filename('cells', postfix='maxima'))
-#    cell_detection_parameter['maxima_detection']['save'] = ws.filename('cells', postfix='maxima')
-    cell_detection_parameter['maxima_detection']['save'] = None
-
-#    cell_detection_parameter['maxima_detection']['h_max']=None;
-
-    processing_parameter = cells.default_cell_detection_processing_parameter.copy()
-    processing_parameter.update(
-        processes=6,  # 'serial',6
-        size_max=20,  # 100, #35,20
-        size_min=11,  # 30, #30,11
-        overlap=10,  # 32, #10,
-        verbose=False
-    )
-
+def cell_filtering(ws, slicing, shape, thresholds_filtering, debugging=True):
     # doing cell detection
     if debugging:
         # cell filtering
@@ -312,7 +281,6 @@ def visualization_cell_statistics(ws, threshold_detection, directory,
         else:
             os.mkdir(directory + 'figures/')
             plt.savefig(directory + 'figures/filtering_stats.png')
-
 
 
 def transformation(ws, coordinates):
@@ -436,3 +404,161 @@ def voxelization(ws, orientation, method='sphere', radius=(7, 7, 7)):
     vox.voxelize(coordinates,
                  sink=ws.filename('density', postfix='intensities'),
                  **voxelization_parameter)
+
+
+
+import sys
+sys.path.append('/data01/astella/ClearMap2')
+from ClearMap.Environment import *  # analysis:ignore
+
+##############################################################################
+# Initialization of parameters
+
+
+print('Starting the analysis', time.time())
+initial_time = time.time()
+times = []
+
+with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
+    config = yaml.load(stream, Loader=Loader)
+
+user = config['user']
+experiment = config['experiment']
+experimental_group = config['experimental_group']
+source_res = config['source_res']
+sink_res = config['sink_res']
+orientation = tuple(config['orientation'])
+slice_x = config['slice_x']
+slice_y = config['slice_y']
+slice_z = config['slice_z']
+shape_param = config['shape_param']
+shape_detection_threshold = config['shape_detection_threshold']
+source = config['source']
+size = config['size']
+method = config['method']
+radius = tuple(config['radius'])
+rerun = config['rerun_alignment']
+debug_detection = config['debug_detection']
+
+# Create test data and debug
+slicing = (slice_x, slice_y, slice_z)
+thresholds_filt = {
+    'source': source,
+    'size': size
+}
+
+
+if config['subjects'] == str:
+    subject = config['subjects']
+    print('Running analysis only on one subject')
+elif config['subjects'] == list:
+    parser = argparse.ArgumentParser(description='subject')
+    parser.add_argument('subject', metavar='subject', type=str,
+    help='mouse which is analyzed in batch file')
+    args = parser.parse_args()
+    subject = args.subject
+else:
+    raise TypeError('Wrong input subject parameter')
+
+
+sys.path.append('/data01/' + user)
+# makedir here with subject
+data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+            + experimental_group + '/'+ subject + '/'
+            
+            
+# make directories needed for project
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
+for folder in ['Auto', 'cFos', 'elastix_auto_to_reference', 
+               'elastix_resampled_to_auto']:
+    if not os.path.exists(data_directory+folder):
+        os.makedirs(data_directory+folder)
+        
+        
+# Workspace initialization
+expression_raw = 'cFos/Z<Z,4> .tif'
+expression_auto = 'Auto/Z<Z,4> .tif'
+
+ws = wsp.Workspace('CellMap', directory=data_directory)
+ws.update(raw=expression_raw, autofluorescence=expression_auto)
+ws.info()
+ws.debug = False
+
+###########################################################################
+
+
+# creation resources directory
+resources_directory = settings.resources_path
+
+
+
+# convertion of data to numpy
+convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
+
+
+
+# resampling of autofluorescence
+resampling(ws=ws, source_res=source_res, sink_res=sink_res,
+           directory=data_directory)
+
+print('Resampling done', time.time() - initial_time)
+times.append(time.time() - initial_time)
+
+
+
+# alignment of resampled to autofluorescence and to reference
+alignment(ws=ws, directory=resources_directory, rerun=rerun)
+
+print('Alignment done', time.time() - times[-1])
+times.append(time.time() - times[-1])
+
+
+
+# Cell detection
+cell_detection(ws=ws, slicing=slicing, shape=shape_param, 
+               threshold_detection=shape_detection_threshold, 
+               debugging=debug_detection)
+
+# Cell filtering
+cell_filtering(ws=ws, slicing=slicing, shape=shape_param, 
+               thresholds_filtering=thresholds_filt, 
+               debugging=debug_detection)
+
+print('Detection and filtering done', time.time() - times[-1])
+times.append(time.time() - times[-1])
+
+
+
+# Visualization cell statistics
+visualization_cell_statistics(ws=ws, 
+    threshold_detection=shape_detection_threshold,
+    directory=resources_directory)
+
+
+
+# Alignment and annotation of detected and filtered results
+cell_alignment_and_annotation(ws=ws, 
+    threshold_detection=shape_detection_threshold,
+    orientation=orientation)
+
+print('Cell alignment and annotation done', time.time() - times[-1])
+times.append(time.time() - times[-1])
+
+
+
+# exports of results
+export_csv(ws=ws)
+export_clearmap1(ws=ws)
+export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
+              directory=data_directory)
+
+
+
+# voxelization
+voxelization(ws=ws, orientation=orientation, method=method, radius=radius)
+
+print('Detection and filtering done', time.time() - times[-1])
+times.append(time.time() - times[-1])
+np.save('ClearMap/Scripts/times'+subject, times)
+np.save(data_directory+'params', config)
