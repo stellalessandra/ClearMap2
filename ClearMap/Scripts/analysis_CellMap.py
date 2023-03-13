@@ -115,16 +115,19 @@ print('Alignment done', time.time() - times[-1])
 times.append(time.time() - times[-1])
 
 
+# Cell detection
+cell_detection(ws=ws, slicing=slicing, shape=shape_param, 
+               threshold_detection=shape_detection_threshold, 
+               debugging=debug_detection)
 
-# Cell detection and filtering
-cell_detection_filtering(ws=ws, slicing=slicing, shape=shape_param,
-                         threshold_detection=shape_detection_threshold,
-                         thresholds_filtering=thresholds_filt,
-                         debugging=debug_detection)
+# Cell filtering
+cell_filtering(ws=ws, slicing=slicing, shape=shape_param, 
+               thresholds_filtering=thresholds_filt, 
+               debugging=debug_detection)
+
 
 print('Detection and filtering done', time.time() - times[-1])
 times.append(time.time() - times[-1])
-
 
 
 # Visualization cell statistics
@@ -141,7 +144,6 @@ cell_alignment_and_annotation(ws=ws,
 
 print('Cell alignment and annotation done', time.time() - times[-1])
 times.append(time.time() - times[-1])
-
 
 
 # exports of results
