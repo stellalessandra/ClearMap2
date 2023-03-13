@@ -56,7 +56,7 @@ def resampling(ws, source_res, sink_res, directory, rerun=False):
         print("Resampling has already been done!")
 
 
-def initialization_alignment(directory):
+def initialization_alignment(alignment_files_directory):
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
         slicing=(
             slice(None), slice(None), slice(
@@ -64,11 +64,11 @@ def initialization_alignment(directory):
             1, 2, 3), overwrite=False, verbose=False)
 
     # alignment parameter files
-    align_channels_affine_file = io.join(directory,
+    align_channels_affine_file = io.join(alignment_files_directory,
                                          'Alignment/align_affine.txt')
-    align_reference_affine_file = io.join(directory,
+    align_reference_affine_file = io.join(alignment_files_directory,
                                           'Alignment/align_affine.txt')
-    align_reference_bspline_file = io.join(directory,
+    align_reference_bspline_file = io.join(alignment_files_directory,
                                            'Alignment/align_bspline.txt')
 #    align_reference_bspline_file = io.join(directory,
 #                                           'Alignment/align_bsplineTest.txt')
@@ -83,9 +83,8 @@ def alignment_resampled_to_autofluorescence(ws,
                                             directory,
                                             rerun):
     print("Aligning resampled data to autofluorescence file")
-
     if rerun or not os.path.exists(directory +
-                                    'elastix_resampled_to_auto/results0.zraw'):
+                                    'elastix_resampled_to_auto/result.0.zraw'):
         # align the two channels
         align_channels_parameter = {
             # moving and reference images
@@ -112,7 +111,7 @@ def alignment_autofluorescence_to_reference(ws,
                                             rerun):
     print("Aligning autofluorescence file to reference file")
     if rerun or not os.path.exists(directory +
-                                    'elastix_auto_to_reference/results0.zraw'):
+                                    'elastix_auto_to_reference/result.0.zraw'):
         # align autofluorescence to reference
         align_reference_parameter = {
             # moving and reference images
@@ -131,7 +130,7 @@ def alignment_autofluorescence_to_reference(ws,
         print("Already done!")
 
 
-def alignment(ws, directory, rerun=False):
+def alignment(ws, directory, alignment_files_directory, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -139,7 +138,8 @@ def alignment(ws, directory, rerun=False):
     print("Doing the alignment...")
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
-        align_reference_bspline_file = initialization_alignment(directory)
+        align_reference_bspline_file = initialization_alignment(
+                alignment_files_directory)
 
     alignment_resampled_to_autofluorescence(ws,
                                             align_channels_affine_file,
@@ -168,7 +168,7 @@ def create_test_data(ws, slicing):
 def visualization_filtering(ws, threshold_detection):
     # visualization of filtering for test debug data
     coordinates = np.hstack([ws.source('cells',
-                                       postfix='filtered_' + str(threshold_detection),
+                                       postfix='filtered' + str(threshold_detection),
                                        prefix='debug')[c][:, None] for c in 'xyz'])
     source = ws.source('stitched', prefix='debug')
     aa = np.zeros(source.shape, dtype='int16')
@@ -233,7 +233,8 @@ def cell_detection(ws, slicing, shape, threshold_detection, debugging=True):
 
             
             
-def cell_filtering(ws, slicing, shape, thresholds_filtering, debugging=True):
+def cell_filtering(ws, slicing, shape, thresholds_filtering, threshold_detection,
+                   debugging=True):
     # doing cell detection
     if debugging:
         # cell filtering
