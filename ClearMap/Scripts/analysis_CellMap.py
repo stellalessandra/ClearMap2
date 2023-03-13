@@ -49,10 +49,10 @@ thresholds_filt = {
 }
 
 
-if config['subjects'] == str:
+if type(config['subjects']) == str:
     subject = config['subjects']
     print('Running analysis only on one subject')
-elif config['subjects'] == list:
+elif type(config['subjects']) == list:
     parser = argparse.ArgumentParser(description='subject')
     parser.add_argument('subject', metavar='subject', type=str,
     help='mouse which is analyzed in batch file')
