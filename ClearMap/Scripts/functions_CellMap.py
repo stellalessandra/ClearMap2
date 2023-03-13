@@ -155,6 +155,10 @@ def alignment(ws, directory, rerun=False):
 
 
 def create_test_data(ws, slicing):
+    # re-format slicing parameter
+    slicing = (slice(slicing[0][0], slicing[0][1]), 
+               slice(slicing[1][0], slicing[1][1]), 
+               slice(slicing[2][0], slicing[2][1]))
     # select sublice for testing the pipeline
     ws.create_debug('stitched', slicing=slicing)
     ws.debug = False
@@ -176,8 +180,7 @@ def visualization_filtering(ws, threshold_detection):
     plt.show()
 
 
-def cell_detection_filtering(ws, slicing, shape, threshold_detection,
-                             thresholds_filtering, debugging=True):
+def cell_detection(ws, slicing, shape, threshold_detection, debugging=True):
     cell_detection_parameter = cells.default_cell_detection_parameter.copy()
     cell_detection_parameter['illumination_correction'] = None
     cell_detection_parameter['background_correction']['shape'] = shape
@@ -186,9 +189,7 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
 #    cell_detection_parameter['intensity_detection']['method'] = ['mean'];
     cell_detection_parameter['intensity_detection']['measure'] = ['source']
     cell_detection_parameter['shape_detection']['threshold'] = threshold_detection
-
 #    cell_detection_parameter['dog_filter']['shape']=None;
-
     io.delete_file(ws.filename('cells', postfix='maxima'))
 #    cell_detection_parameter['maxima_detection']['save'] = ws.filename('cells', postfix='maxima')
     cell_detection_parameter['maxima_detection']['save'] = None
@@ -207,7 +208,7 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
     # doing cell detection
     if debugging:
         # creating test data
-        create_test_data(ws, slicing)
+        create_test_data(ws=ws, slicing=slicing)
         # doing cell detection
         cells.detect_cells(
             ws.filename(
@@ -219,6 +220,22 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
                 prefix='debug'),
             cell_detection_parameter=cell_detection_parameter,
             processing_parameter=processing_parameter)
+    else:
+        print('Doing the detection...')
+        # doing cell detection
+        cells.detect_cells(
+            ws.filename('stitched'),
+            ws.filename(
+                'cells',
+                postfix=str(threshold_detection)),
+            cell_detection_parameter=cell_detection_parameter,
+            processing_parameter=processing_parameter)
+
+            
+            
+def cell_filtering(ws, slicing, shape, thresholds_filtering, debugging=True):
+    # doing cell detection
+    if debugging:
         # cell filtering
         cells.filter_cells(
             source=ws.filename(
@@ -234,15 +251,6 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
         print("plotting...")
         visualization_filtering(ws, threshold_detection)
     else:
-        print('Doing the detection...')
-        # doing cell detection
-        cells.detect_cells(
-            ws.filename('stitched'),
-            ws.filename(
-                'cells',
-                postfix=str(threshold_detection)),
-            cell_detection_parameter=cell_detection_parameter,
-            processing_parameter=processing_parameter)
         print('Doing the filtering...')
         # cell filtering
         cells.filter_cells(
@@ -254,6 +262,7 @@ def cell_detection_filtering(ws, slicing, shape, threshold_detection,
                 postfix='filtered' +
                 str(threshold_detection)),
             thresholds=thresholds_filtering)
+
 
 
 def visualization_cell_statistics(ws, threshold_detection, directory,
