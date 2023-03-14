@@ -128,30 +128,69 @@ def alignment_autofluorescence_to_reference(ws,
         elx.align(**align_reference_parameter)
     else:
         print("Already done!")
+        
+        
+def alignment_resampled_to_reference(ws,
+                                     reference_file,
+                                     align_reference_affine_file,
+                                     align_reference_bspline_file,
+                                     directory,
+                                     rerun):
+    
+    print("Aligning resampled data to reference file")
+    if rerun or not os.path.exists(directory +
+                                    'elastix_resampled_to_reference/result.0.zraw'):
+        # align autofluorescence to reference
+        align_reference_parameter = {
+            # moving and reference images
+            "moving_image": reference_file,
+            "fixed_image": ws.filename('resampled'),
+            #      "fixed_image"  : ws.filename('resampled'),
+
+            # elastix parameter files for alignment
+            "affine_parameter_file": align_reference_affine_file,
+            "bspline_parameter_file": align_reference_bspline_file,
+            # directory of the alignment result
+            "result_directory": ws.filename('resampled_to_reference')
+        }
+        elx.align(**align_reference_parameter)
+    else:
+        print("Already done!")
 
 
-def alignment(ws, directory, alignment_files_directory, rerun=False):
+def alignment(ws, directory, alignment_files_directory, align_to, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
     """
     print("Doing the alignment...")
+    # TODO: figure this out
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
         align_reference_bspline_file = initialization_alignment(
                 alignment_files_directory)
+    
+    if align_to == 'cfos':
+        alignment_resampled_to_reference(ws,
+                                         reference_file,
+                                         align_reference_affine_file,
+                                         align_reference_bspline_file,
+                                         directory,
+                                         rerun)
+    elif align_to == 'cfos_auto':
+        alignment_resampled_to_autofluorescence(ws,
+                                        align_channels_affine_file,
+                                        directory,
+                                        rerun)
 
-    alignment_resampled_to_autofluorescence(ws,
-                                            align_channels_affine_file,
-                                            directory,
-                                            rerun)
-
-    alignment_autofluorescence_to_reference(ws, 
-                                            reference_file,
-                                            align_reference_affine_file,
-                                            align_reference_bspline_file,
-                                            directory,
-                                            rerun)
+        alignment_autofluorescence_to_reference(ws, 
+                                                reference_file,
+                                                align_reference_affine_file,
+                                                align_reference_bspline_file,
+                                                directory,
+                                                rerun)
+    else:
+        raise ValueError('Align either to cfos or cfos_auto')
 
 
 def create_test_data(ws, slicing):

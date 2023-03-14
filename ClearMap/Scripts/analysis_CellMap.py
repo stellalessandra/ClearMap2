@@ -40,6 +40,7 @@ method = config['method']
 radius = tuple(config['radius'])
 rerun = config['rerun_alignment']
 debug_detection = config['debug_detection']
+align_to = config['align_to']
 
 # Create test data and debug
 slicing = (slice_x, slice_y, slice_z)
@@ -72,7 +73,7 @@ data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
 for folder in ['Auto', 'cFos', 'elastix_auto_to_reference', 
-               'elastix_resampled_to_auto']:
+               'elastix_resampled_to_auto', 'elastix_resampled_to_reference']:
     if not os.path.exists(data_directory+folder):
         os.makedirs(data_directory+folder)
         
@@ -110,6 +111,7 @@ times.append(time.time() - initial_time)
 
 # alignment of resampled to autofluorescence and to reference
 alignment(ws=ws, alignment_files_directory=resources_directory, 
+          align_to=align_to,
           directory=data_directory, rerun=rerun)
 
 print('Alignment done', time.time() - times[-1])
