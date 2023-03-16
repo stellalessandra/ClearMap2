@@ -47,7 +47,8 @@ default_file_type_to_name = odict(
     background                = "background.npy",
     resampled                 = "resampled.tif",
     resampled_to_auto         = 'elastix_resampled_to_auto',
-    auto_to_reference         = 'elastix_auto_to_reference', 
+    auto_to_reference         = 'elastix_auto_to_reference',
+    resampled_to_reference    = 'elastix_resampled_to_reference'
     );
 
 file_type_synonyms = dict(
