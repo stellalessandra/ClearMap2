@@ -39,3 +39,4 @@ radius : [7,7,7]
 # rerun and debugging options
 rerun_alignment : False
 debug_detection : True
+align_to : 'cfos' # options: 'cfos'or 'cfos_auto'
