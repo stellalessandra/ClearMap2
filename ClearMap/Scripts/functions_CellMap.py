@@ -58,12 +58,12 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         print("Resampling has already been done!")
 
 
-def initialization_alignment(alignment_files_directory):
+def initialization_alignment(alignment_files_directory, orientation):
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
         slicing=(
             slice(None), slice(None), slice(
-                1, 256)), orientation=(
-            1, 2, 3), overwrite=False, verbose=False)
+                1, 256)), orientation=orientation, 
+                overwrite=False, verbose=False)
 
     # alignment parameter files
     align_channels_affine_file = io.join(alignment_files_directory,
@@ -160,7 +160,7 @@ def alignment_resampled_to_reference(ws,
         print("Already done!")
 
 
-def alignment(ws, directory, alignment_files_directory, align_to, rerun=False):
+def alignment(ws, directory, alignment_files_directory, orientation, align_to, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -170,7 +170,7 @@ def alignment(ws, directory, alignment_files_directory, align_to, rerun=False):
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
         align_reference_bspline_file = initialization_alignment(
-                alignment_files_directory)
+                alignment_files_directory, orientation)
     
     if align_to == 'cfos':
         alignment_resampled_to_reference(ws,
