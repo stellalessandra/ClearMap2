@@ -1,5 +1,6 @@
 # %% Initialize workspace
 import sys
+sys.path.append('/data/user/ClearMap2)
 sys.path.append('/data01/astella/ClearMap2')
 from ClearMap.Environment import *  # analysis:ignore
 import scipy.io
@@ -63,17 +64,22 @@ else:
     raise TypeError('Wrong input subject parameter')
 
 
-sys.path.append('/data01/' + user)
-# makedir here with subject
-data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+if user == 'szucca/Ilaria':
+    sys.path.append('/data/szucca/Ilaria')
+    data_directory = '/data/szucca/Ilaria/Projects/' + experiment + '/' \
             + experimental_group + '/'+ subject + '/'
+else:
+    sys.path.append('/data01/' + user)
+    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+                + experimental_group + '/'+ subject + '/'
             
             
 # make directories needed for project
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
-for folder in ['Auto', 'cFos', 'elastix_auto_to_reference', 
-               'elastix_resampled_to_auto', 'elastix_resampled_to_reference']:
+for folder in ['elastix_auto_to_reference', 
+               'elastix_resampled_to_auto', 
+               'elastix_resampled_to_reference']:
     if not os.path.exists(data_directory+folder):
         os.makedirs(data_directory+folder)
         
@@ -99,10 +105,9 @@ resources_directory = settings.resources_path
 convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
 
 
-
 # resampling of autofluorescence
 resampling(ws=ws, source_res=source_res, sink_res=sink_res,
-           directory=data_directory)
+        align_to=align_to, directory=data_directory)
 
 print('Resampling done', time.time() - initial_time)
 times.append(time.time() - initial_time)
@@ -111,7 +116,7 @@ times.append(time.time() - initial_time)
 
 # alignment of resampled to autofluorescence and to reference
 alignment(ws=ws, alignment_files_directory=resources_directory, 
-          align_to=align_to,
+          align_to=align_to, orientation=orientation,
           directory=data_directory, rerun=rerun)
 
 print('Alignment done', time.time() - times[-1])
@@ -144,7 +149,7 @@ visualization_cell_statistics(ws=ws,
 # Alignment and annotation of detected and filtered results
 cell_alignment_and_annotation(ws=ws, 
     threshold_detection=shape_detection_threshold,
-    orientation=orientation)
+    orientation=orientation, align_to=align_to)
 
 print('Cell alignment and annotation done', time.time() - times[-1])
 times.append(time.time() - times[-1])

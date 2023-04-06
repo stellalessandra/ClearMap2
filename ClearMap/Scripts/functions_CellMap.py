@@ -25,7 +25,7 @@ def convert_data_to_numpy(ws, directory, rerun=False):
         print("Stitching has already been done!")
 
 
-def resampling(ws, source_res, sink_res, directory, rerun=False):
+def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
     """
     Parameters
     ----------
@@ -39,29 +39,31 @@ def resampling(ws, source_res, sink_res, directory, rerun=False):
         "processes": 4,
         "verbose": False,
     }
-    resample_parameter_auto = {
-      "source_resolution" : (source_res[0], source_res[1], source_res[2]*2),
-      "sink_resolution"   : (sink_res[0], sink_res[1], sink_res[2]),
-      "processes" : 4,
-      "verbose" : False,                
-      };
+    if align_to == 'cfos_auto':
+        resample_parameter_auto = {
+        "source_resolution" : (source_res[0], source_res[1], source_res[2]*2),
+        "sink_resolution"   : (sink_res[0], sink_res[1], sink_res[2]),
+        "processes" : 4,
+        "verbose" : False,                
+        }
     if rerun or not os.path.exists(directory + 'resampled.tif'):
         io.delete_file(ws.filename('resampled'))
         res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
                      **resample_parameter)
-        res.resample(ws.filename('autofluorescence'), 
-                     sink=ws.filename('resampled', postfix='autofluorescence'), 
-                     **resample_parameter_auto)
+        if align_to == 'cfos_auto':
+            res.resample(ws.filename('autofluorescence'), 
+                        sink=ws.filename('resampled', postfix='autofluorescence'), 
+                        **resample_parameter_auto)
     else:
         print("Resampling has already been done!")
 
 
-def initialization_alignment(alignment_files_directory):
+def initialization_alignment(alignment_files_directory, orientation):
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
         slicing=(
             slice(None), slice(None), slice(
-                1, 256)), orientation=(
-            1, 2, 3), overwrite=False, verbose=False)
+                1, 256)), orientation=orientation, 
+                overwrite=False, verbose=False)
 
     # alignment parameter files
     align_channels_affine_file = io.join(alignment_files_directory,
@@ -158,7 +160,7 @@ def alignment_resampled_to_reference(ws,
         print("Already done!")
 
 
-def alignment(ws, directory, alignment_files_directory, align_to, rerun=False):
+def alignment(ws, directory, alignment_files_directory, orientation, align_to, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -168,7 +170,7 @@ def alignment(ws, directory, alignment_files_directory, align_to, rerun=False):
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
         align_reference_bspline_file = initialization_alignment(
-                alignment_files_directory)
+                alignment_files_directory, orientation)
     
     if align_to == 'cfos':
         alignment_resampled_to_reference(ws,
@@ -328,29 +330,35 @@ def visualization_cell_statistics(ws, threshold_detection, directory,
 
 
 
-def transformation(ws, coordinates):
+def transformation(ws, coordinates, align_to):
     coordinates = res.resample_points(
         coordinates, sink=None, orientation=None,
         source_shape=io.shape(ws.filename('stitched')),
         sink_shape=io.shape(ws.filename('resampled')))
 
-    coordinates = elx.transform_points(
-        coordinates, sink=None,
-        transform_directory=ws.filename('resampled_to_auto'),
-        binary=True, indices=False)
+    if align_to == 'cfos_auto':
+        coordinates = elx.transform_points(
+            coordinates, sink=None,
+            transform_directory=ws.filename('resampled_to_auto'),
+            binary=True, indices=False)
 
-    coordinates = elx.transform_points(
-        coordinates, sink=None,
-        transform_directory=ws.filename('auto_to_reference'),
-        binary=True, indices=False)
+        coordinates = elx.transform_points(
+            coordinates, sink=None,
+            transform_directory=ws.filename('auto_to_reference'),
+            binary=True, indices=False)
+    else:
+        coordinates = elx.transform_points(
+            coordinates, sink=None,
+            transform_directory=ws.filename('resampled_to_reference'),
+            binary=True, indices=False)
     return coordinates
 
 
-def cell_alignment_and_annotation(ws, threshold_detection, orientation):
+def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to):
     # cell alignment
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
     coordinates = np.array([source[c] for c in 'xyz']).T
-    coordinates_transformed = transformation(ws, coordinates)
+    coordinates_transformed = transformation(ws, coordinates, align_to)
     # cell annotation
     # set the common annotation file
     annotation_file, reference_file, \
