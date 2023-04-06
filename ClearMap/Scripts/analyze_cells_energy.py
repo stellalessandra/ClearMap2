@@ -107,20 +107,6 @@ def aggregate_cells_per_area(df_mouse, vol, area):
     return n_cells
 
 
-# def calculate_cells_per_level(df_mouse, vol, level):
-#     # find all areas of a given st_level
-#     area_list = vol.loc[lambda vol: vol['st_level'] == level]['safe_name'].values
-#     # loop over all areas of given st_level and aggregate cells per area
-#     n_cells_list = [aggregate_cells_per_area(df_mouse, vol, area) for area in area_list]
-#     # return df with area name and n_cells
-#     df_ncells = {'area': area_list,
-#                         'n_cells': n_cells_list
-#                        }
-#     df_ncells = pd.DataFrame(df_ncells)
-#     # remove lowercase areas
-#     df_ncells = df_ncells[df_ncells.area.str[0].str.isupper()]
-#     return df_ncells
-
 def calculate_energy_per_area(df_mouse, area, vol):
     energy = df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == area, :]['source'].sum()/ \
              vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']
@@ -133,30 +119,15 @@ def aggregate_energy_per_area(df_mouse, vol, area):
     # find area depth (IMPORTANT : not st_level!)
     area_depth = vol.loc[lambda vol: vol['safe_name'] == area, :]['depth'].values[0]
     # now I have to find all areas that have that area up as parent up to the area level
-    children = ace.find_children(area_id=area_id, l=area_depth, vol=vol)
+    children = find_children(area_id=area_id, l=area_depth, vol=vol)
     # loop over children
     # the first child is the area itself, and its energy is the number of neurons over the volume
-    area_energy = ace.calculate_energy_per_area(df_mouse=df_mouse, area=children[0], vol=vol).values[0]
+    area_energy = calculate_energy_per_area(df_mouse=df_mouse, area=children[0], vol=vol).values[0]
     for child in children[1:]:
         # the other children count just by the sum of the intensities over the volume of the mother area
-        area_energy += df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == child, :]['source'].sum()/ \
-             vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']
+        area_energy += (df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == child, :]['source'].sum()/ \
+             vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']).values[0]
     return area_energy
-
-
-# def calculate_energy_per_level(df_mouse, vol, level):
-#     # find all areas of a given level 
-#     area_list = vol.loc[lambda vol: vol['st_level'] == level]['safe_name'].values
-#     # loop over all areas of given level and aggregate cells per area
-#     energy_list = [aggregate_energy_per_area(df_mouse=df_mouse, vol=vol, area=area) for area in area_list]
-#     # return df with area name and n_cells
-#     df_energy = {'area': area_list,
-#                  'energy': energy_list
-#                        }
-#     df_energy = pd.DataFrame(df_energy)
-#     # remove lowercase areas
-#     df_energy = df_energy[df_energy.area.str[0].str.isupper()]
-#     return df_energy
 
 
 def calculate_cells_energy_per_level(df_mouse, vol, level):
