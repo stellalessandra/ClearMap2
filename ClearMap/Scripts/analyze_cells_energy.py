@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from yaml import Loader
+from scipy.stats import ttest_ind, mannwhitneyu
 
 def list_subjects(root_directory):
     try:
@@ -146,3 +147,55 @@ def calculate_cells_energy_per_level(df_mouse, vol, level):
     # remove lowercase areas
     df_cells_energy = df_cells_energy[df_cells_energy.area.str[0].str.isupper()]
     return df_cells_energy
+
+
+def test_across_groups(df_control, df_fam, df_unfam, test='ttest'):
+    """
+    Test can either be ttest or mannwhitneyu
+    """
+    df_test = pd.DataFrame(columns=['area', 'pval_Control_vs_Fam', 
+                                     'pval_Control_vs_Unfam', 'pval_Fam_vs_Unfam'])
+    df_test['area'] = df_control['area']
+    # loop over areas
+    for area in df_control['area'].values:
+        # compare control and fam
+        # check if all values are not zero
+        if df_control[df_control['area'] == area].values[0][1:].sum() + \
+        df_fam[df_fam['area'] == area].values[0][1:].sum() != 0:
+            if test == 'ttest':
+                pval_control_fam = ttest_ind(df_control[df_control['area'] == area].values[0][1:],
+                                             df_fam[df_fam['area'] == area].values[0][1:])
+            elif test == 'mannwhitneyu':
+                pval_control_fam = mannwhitneyu(df_control[df_control['area'] == area].values[0][1:],
+                                                df_fam[df_fam['area'] == area].values[0][1:])
+            else:
+                raise ValueError('Test can either be ttest or mannwhitneyu')
+            # assign pvalue to dataframe
+            df_test['pval_Control_vs_Fam'][df_test.loc[df_test['area'] == area].index[0]] = pval_control_fam[1]
+
+        # compare control and unfam
+        # check if all values are not zero
+        if df_control[df_control['area'] == area].values[0][1:].sum() + \
+        df_unfam[df_unfam['area'] == area].values[0][1:].sum() != 0:
+            if test == 'ttest':
+                pval_control_unfam = ttest_ind(df_control[df_control['area'] == area].values[0][1:],
+                     df_unfam[df_unfam['area'] == area].values[0][1:])
+            else:
+                pval_control_unfam = mannwhitneyu(df_control[df_control['area'] == area].values[0][1:],
+                     df_unfam[df_unfam['area'] == area].values[0][1:])
+            # assign pvalue to dataframe
+            df_test['pval_Control_vs_Unfam'][df_test.loc[df_test['area'] == area].index[0]] = pval_control_unfam[1]
+
+        # compare fam and unfam
+        # check if all values are not zero
+        if df_fam[df_fam['area'] == area].values[0][1:].sum() + \
+        df_unfam[df_unfam['area'] == area].values[0][1:].sum() != 0:
+            if test =='ttest':
+                pval_fam_unfam = ttest_ind(df_fam[df_fam['area'] == area].values[0][1:],
+                     df_unfam[df_unfam['area'] == area].values[0][1:])
+            else:
+                pval_fam_unfam = mannwhitneyu(df_fam[df_fam['area'] == area].values[0][1:],
+                     df_unfam[df_unfam['area'] == area].values[0][1:])
+            # assign pvalue to dataframe
+            df_test['pval_Fam_vs_Unfam'][df_test.loc[df_test['area'] == area].index[0]] = pval_fam_unfam[1]
+    return df_test
