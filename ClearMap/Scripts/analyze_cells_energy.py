@@ -41,7 +41,7 @@ def clean_volumes_database(volumes):
     for i in range(0,11):
         volumes[i] = pd.to_numeric(volumes[i])
     # remove a few useless columns
-    columns_to_drop = ['acronym', 'ontology_id', 'hemisphere_id', 'weight', 'graph_id', 'graph_order', 'color_hex_triplet', \
+    columns_to_drop = ['ontology_id', 'hemisphere_id', 'weight', 'graph_id', 'graph_order', 'color_hex_triplet', \
     'neuro_name_structure_id', 'neuro_name_structure_id_path', 'failed', 'sphinx_id', 'structure_name_facet', \
      'failed_facet']
     volumes = volumes.drop(columns_to_drop, axis=1)
@@ -131,6 +131,25 @@ def aggregate_energy_per_area(df_mouse, vol, area):
     return area_energy
 
 
+def calculate_value_across_groups(experimental_groups, dict_results_across_mice, value='n_cells'):
+    """
+    Value can either be n_cells or energy
+    """
+    df_control = pd.DataFrame()
+    df_fam = pd.DataFrame()
+    df_unfam = pd.DataFrame()
+    for subject in experimental_groups['Control']:
+        df_control['area'] = dict_results_across_mice[subject]['area']
+        df_control[subject] = dict_results_across_mice[subject][value]
+    for subject in experimental_groups['Fam']:
+        df_fam['area'] = dict_results_across_mice[subject]['area']
+        df_fam[subject] = dict_results_across_mice[subject][value]
+    for subject in experimental_groups['Unfam']:
+        df_unfam['area'] = dict_results_across_mice[subject]['area']
+        df_unfam[subject] = dict_results_across_mice[subject][value]
+    return df_control, df_fam, df_unfam
+
+
 def calculate_cells_energy_per_level(df_mouse, vol, level):
     # find all areas of a given level
     area_list = vol.loc[lambda vol: vol['st_level'] == level]['safe_name'].values
@@ -199,3 +218,11 @@ def test_across_groups(df_control, df_fam, df_unfam, test='ttest'):
             # assign pvalue to dataframe
             df_test['pval_Fam_vs_Unfam'][df_test.loc[df_test['area'] == area].index[0]] = pval_fam_unfam[1]
     return df_test
+
+
+def cross_corr(df):
+    # remove areas where no cells have been detected in any mouse
+    # and remove rows with all nans
+    corr_matrix = df.set_index('area').loc[
+        ~(df.set_index('area')==0).all(axis=1)].dropna(axis=0).T.corr(method='pearson')
+    return corr_matrix
