@@ -5,6 +5,7 @@ import pandas as pd
 import yaml
 from yaml import Loader
 from scipy.stats import ttest_ind, mannwhitneyu
+import utils_PLS as upls
 
 def list_subjects(root_directory):
     try:
@@ -70,6 +71,11 @@ def reformat_df_mouse(df):
     #remove trailing spaces at the end of the string
     df['area_name'] = df['area_name'].str.rstrip()
     df = df.drop(['layer', 'layer1', 'layer2'], axis=1)
+#     # remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
+#     df_levels = upls.create_df_levels(volumes)
+#     macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
+#     list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
+#     df = df[df['area_name'].isin(list_areas_to_keep)]
     return df
 
 
@@ -119,7 +125,6 @@ def aggregate_energy_per_area(df_mouse, vol, area):
     area_id = vol.loc[lambda vol: vol['safe_name'] == area, :]['id'].values[0]
     # find area depth (IMPORTANT : not st_level!)
     area_depth = vol.loc[lambda vol: vol['safe_name'] == area, :]['depth'].values[0]
-    # now I have to find all areas that have that area up as parent up to the area level
     children = find_children(area_id=area_id, l=area_depth, vol=vol)
     # loop over children
     # the first child is the area itself, and its energy is the number of neurons over the volume
@@ -165,6 +170,11 @@ def calculate_cells_energy_per_level(df_mouse, vol, level):
     df_cells_energy= pd.DataFrame(df_cells_energy)
     # remove lowercase areas
     df_cells_energy = df_cells_energy[df_cells_energy.area.str[0].str.isupper()]
+    # remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
+    df_levels = upls.create_df_levels(vol)
+    macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
+    list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
+    df_cells_energy = df_cells_energy[df_cells_energy['area'].isin(list_areas_to_keep)]
     return df_cells_energy
 
 
