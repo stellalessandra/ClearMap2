@@ -71,15 +71,15 @@ def reformat_df_mouse(df):
     #remove trailing spaces at the end of the string
     df['area_name'] = df['area_name'].str.rstrip()
     df = df.drop(['layer', 'layer1', 'layer2'], axis=1)
-#     # remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
-#     df_levels = upls.create_df_levels(volumes)
-#     macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
-#     list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
-#     df = df[df['area_name'].isin(list_areas_to_keep)]
     return df
 
 
-def calculate_cells_per_area(df_mouse, area):
+def calculate_cells_per_area(df_mouse, area, source, size):
+    # apply second filtering on source or size
+    if source != 0:
+        df_mouse = df_mouse.loc[lambda df_mouse: df_mouse['source'] > source, :]
+    if size != 0:
+        df_mouse = df_mouse.loc[lambda df_mouse: df_mouse['size'] > size, :]
     n_cells = len(df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == area, :])
     return n_cells
 
@@ -99,7 +99,7 @@ def find_children(area_id, l, vol):
     return children
 
 
-def aggregate_cells_per_area(df_mouse, vol, area):
+def aggregate_cells_per_area(df_mouse, vol, area, source, size):
     # find area index
     area_id = vol.loc[lambda vol: vol['safe_name'] == area, :]['id'].values[0]
     # find area depth (IMPORTANT : not st_level!)
@@ -110,17 +110,22 @@ def aggregate_cells_per_area(df_mouse, vol, area):
     n_cells = 0
     for child in children:
         # count number of cells per area
-        n_cells += calculate_cells_per_area(df_mouse=df_mouse, area=child)
+        n_cells += calculate_cells_per_area(df_mouse=df_mouse, area=child, source=source, size=size)
     return n_cells
 
 
-def calculate_energy_per_area(df_mouse, area, vol):
+def calculate_energy_per_area(df_mouse, area, vol, source, size):
+    # apply second filtering on source or size
+    if source != 0:
+        df_mouse = df_mouse.loc[lambda df_mouse: df_mouse['source'] > source, :]
+    if size != 0:
+        df_mouse = df_mouse.loc[lambda df_mouse: df_mouse['size'] > size, :]
     energy = df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == area, :]['source'].sum()/ \
              vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']
     return energy
 
 
-def aggregate_energy_per_area(df_mouse, vol, area):
+def aggregate_energy_per_area(df_mouse, vol, area, source, size):
     # find area index
     area_id = vol.loc[lambda vol: vol['safe_name'] == area, :]['id'].values[0]
     # find area depth (IMPORTANT : not st_level!)
@@ -128,7 +133,7 @@ def aggregate_energy_per_area(df_mouse, vol, area):
     children = find_children(area_id=area_id, l=area_depth, vol=vol)
     # loop over children
     # the first child is the area itself, and its energy is the number of neurons over the volume
-    area_energy = calculate_energy_per_area(df_mouse=df_mouse, area=children[0], vol=vol).values[0]
+    area_energy = calculate_energy_per_area(df_mouse=df_mouse, area=children[0], vol=vol, source=source, size=size).values[0]
     for child in children[1:]:
         # the other children count just by the sum of the intensities over the volume of the mother area
         area_energy += (df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == child, :]['source'].sum()/ \
@@ -155,13 +160,13 @@ def calculate_value_across_groups(experimental_groups, dict_results_across_mice,
     return df_control, df_fam, df_unfam
 
 
-def calculate_cells_energy_per_level(df_mouse, vol, level):
+def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
     # find all areas of a given level
     area_list = vol.loc[lambda vol: vol['st_level'] == level]['safe_name'].values
     # loop over all areas of given evel and aggregate cells per area
-    n_cells_list = [aggregate_cells_per_area(df_mouse, vol, area) for area in area_list]
+    n_cells_list = [aggregate_cells_per_area(df_mouse=df_mouse, vol=vol, area=area, source=source, size=size) for area in area_list]
     # loop over all areas of given level and aggregate cells per area
-    energy_list = [aggregate_energy_per_area(df_mouse=df_mouse, vol=vol, area=area) for area in area_list]
+    energy_list = [aggregate_energy_per_area(df_mouse=df_mouse, vol=vol, area=area, source=source, size=size) for area in area_list]
     # return df with area name and n_cells
     df_cells_energy = {'area': area_list,
                        'n_cells': n_cells_list,
