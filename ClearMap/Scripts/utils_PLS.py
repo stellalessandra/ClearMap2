@@ -141,23 +141,17 @@ def identify_pls_sig_areas(saliences, threshold, volumes):
 
 def format_data_pls(dict_results, batch, table):
     data = pd.DataFrame()
+    if table not in ['n_cells', 'energy', 'density', 'relative_density']:
+        raise ValueError('wrong input value')
     for mouse in dict_results.keys():
-        if table=='n_cells':
-            temp = dict_results[mouse].filter(['acronym','n_cells'], axis=1).set_index('acronym').T
-        elif table=='energy':
-            temp = dict_results[mouse].filter(['acronym','energy'], axis=1).set_index('acronym').T
-        else:
-            raise ValueError('either n_cells or energy input')
+        temp = dict_results[mouse].filter(['acronym',table], axis=1).set_index('acronym').T
         temp.insert(loc=0, column='subject', value=mouse)
         temp.insert(loc=1, column='sex', value='F')
         temp.insert(loc=2, column='group', value=re.split(r'(\d+)', mouse)[-1])
         temp.reset_index(drop = True, inplace = True)
         data = pd.concat([data, temp], axis=0) 
     data = data.loc[:, (data != 0).any(axis=0)]
-    if table=='n_cells':
-        data.to_csv('./results_pls/'+batch+'_n_cells.csv')
-    else:
-        data.to_csv('./results_pls/'+batch+'_energy.csv')
+    return data
         
 
 def create_df_levels(volumes):
@@ -221,4 +215,63 @@ def plot_saliences(df_data, index, ax, df_levels):
                 data=df,
                 dodge=False)
     
- 
+
+def plot_panel_contrasts(batch, variable):
+    contrasts = pd.read_csv('./results_pls/'+ batch +'_'+ variable +'_contrasts.csv')
+    contrasts = contrasts.rename(columns={"group_Control": "Control", 
+                                                  "group_Fam": "Fam", 
+                                                  "group_Unfam":"Unfam"})
+    fig, axes = plt.subplots(1,3, sharey='row', figsize=(10,5))
+    plot_contrasts(df_data=contrasts, index=0, ax=axes[0])
+    plot_contrasts(df_data=contrasts, index=1, ax=axes[1])
+    plot_contrasts(df_data=contrasts, index=2, ax=axes[2])
+    axes[0].set_ylabel('Contrast')
+    axes[1].set_ylabel('')
+    axes[2].set_ylabel('')
+    axes[0].tick_params(axis='x', labelrotation=90)
+    axes[1].tick_params(axis='x', labelrotation=90)
+    axes[2].tick_params(axis='x', labelrotation=90)
+    axes[0].set_title('First contrast')
+    axes[1].set_title('Second contrast')
+    axes[2].set_title('Third contrast')
+    for i in range(3):
+        axes[i].set(xlabel=None)
+    plt.tight_layout()
+    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_contrasts_all_areas.png')
+    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_contrasts_all_areas.svg')
+    
+    
+def plot_panel_saliences(batch, variable, df_levels):
+    saliences = pd.read_csv('./results_pls/'+ batch +'_'+ variable +'_saliences.csv')
+    fig, axes = plt.subplots(3,1, sharex='row', figsize=(13,7))
+    plt.subplots_adjust(top=0.9, left=0.03, right=0.8)
+    plot_saliences(df_data=saliences, index=0, ax=axes[0], df_levels=df_levels)
+    plot_saliences(df_data=saliences, index=1, ax=axes[1], df_levels=df_levels)
+    plot_saliences(df_data=saliences, index=2, ax=axes[2], df_levels=df_levels)
+    axes[0].tick_params(axis='x', labelrotation=90)
+    axes[1].tick_params(axis='x', labelrotation=90)
+    axes[2].tick_params(axis='x', labelrotation=90)
+    axes[0].set_xlabel('')
+    axes[0].set(xticklabels=[])
+    axes[0].set_ylim(0,10)
+    axes[1].set_xlabel('')
+    axes[1].set(xticklabels=[])
+    axes[0].set_title('First salience')
+    axes[1].set_title('Second salience')
+    axes[2].set_title('Third salience')
+    axes[2].set_xlabel('Area')
+    axes[0].legend(loc='right', bbox_to_anchor=(1.25,0.3))
+    axes[1].get_legend().remove()
+    axes[2].get_legend().remove()
+    n = 4  # Keeps every 7th label
+    for i in range(3):
+        axes[i].axhline(y=1.96, linestyle='-.', color='darkgrey')
+        axes[i].axhline(y=-1.96, linestyle='-.', color='darkgrey')
+        [l.set_visible(False) for (i,l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
+    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.png')
+    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.svg')
+    
+    
+    
+    
+    
