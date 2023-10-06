@@ -180,6 +180,17 @@ def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
     macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
     list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
     df_cells_energy = df_cells_energy[df_cells_energy['area'].isin(list_areas_to_keep)]
+    
+    #loop over all areas of given level and calculate density
+    density_list = []
+    rel_density_list = []
+    for idx, area in enumerate(list_areas_to_keep):
+        volume = vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume'].values[0]
+        n_cells = df_cells_energy.loc[df_cells_energy['area'] == area]['n_cells'].values[0]
+        density_list.append(n_cells/volume)
+        rel_density_list.append((n_cells/volume)/df_cells_energy['n_cells'].sum())
+    df_cells_energy['density'] = density_list
+    df_cells_energy['relative_density'] = rel_density_list
     return df_cells_energy
 
 
