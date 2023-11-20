@@ -7,7 +7,7 @@ Created on Tue Apr 20 14:33:29 2021
 """
 import os
   
-os.chdir('/data01/szucca/Projects/SexualImprinting/SWISS_2022/SW24Unfam/Auto')
+os.chdir('/media/astella/Elements/Bovetti/WILD/20230621_W20_cfos/20230629_122136/t000/c000/RES(8486x3850x1040)/00-163/00-163_000000/')
 print(os.getcwd())
 COUNT = 0
   

@@ -100,7 +100,6 @@ ws.debug = False
 resources_directory = settings.resources_path
 
 
-
 # convertion of data to numpy
 convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
 
@@ -117,7 +116,7 @@ times.append(time.time() - initial_time)
 # alignment of resampled to autofluorescence and to reference
 alignment(ws=ws, alignment_files_directory=resources_directory, 
           align_to=align_to, orientation=orientation,
-          directory=data_directory, rerun=rerun)
+          directory=data_directory, slicing=slicing,rerun=rerun)
 
 print('Alignment done', time.time() - times[-1])
 times.append(time.time() - times[-1])
@@ -149,7 +148,7 @@ visualization_cell_statistics(ws=ws,
 # Alignment and annotation of detected and filtered results
 cell_alignment_and_annotation(ws=ws, 
     threshold_detection=shape_detection_threshold,
-    orientation=orientation, align_to=align_to)
+    orientation=orientation, align_to=align_to, slicing=slicing)
 
 print('Cell alignment and annotation done', time.time() - times[-1])
 times.append(time.time() - times[-1])
@@ -164,7 +163,8 @@ export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
 
 
 # voxelization
-voxelization(ws=ws, orientation=orientation, method=method, radius=radius)
+voxelization(ws=ws, orientation=orientation, method=method, radius=radius,
+             slicing=slicing)
 
 print('Detection and filtering done', time.time() - times[-1])
 times.append(time.time() - times[-1])

@@ -43,7 +43,7 @@ if __name__ == "__main__":
   from ClearMap.Environment import *  #analysis:ignore
   
   #directories and files
-  directory = '/data01/astella/Projects/SexualImprinting/C57_MaleUrine_Exposure_cFos/F1Control/'    
+  directory = '/data01/astella/Projects/SexualImprinting/Black_wf_WholeBrain/BL45_Control/'    
   
   expression_raw      = 'cFos/Z<Z,4> .tif'         
   expression_auto     = 'Auto/Z<Z,4> .tif'
@@ -106,7 +106,7 @@ if __name__ == "__main__":
   #%% Initialize alignment 
   
   annotation_file, reference_file, distance_file=ano.prepare_annotation_files(
-      slicing=(slice(None),slice(None),slice(1,256)), orientation=(1,2,3),
+      slicing=(slice(None),slice(None),slice(None)), orientation=(3,2,1),
       overwrite=False, verbose=True);
           
   #alignment parameter files    
