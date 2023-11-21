@@ -12,10 +12,25 @@ from yaml import Loader
 import time
 
 def reformat_slicing_parameter(slicing):
+    # fix here: abbiamo bisogno di una slice_x, slice_y, slice_z e poi controllare che non siano None,
+    # altrimenti assegnare le tuple
+
     # re-format slicing parameter
-    slicing = (slice(slicing[0][0], slicing[0][1]), 
-               slice(slicing[1][0], slicing[1][1]), 
-               slice(slicing[2][0], slicing[2][1]))
+    if type(slicing[0]) is tuple:
+        slice_x = slice(slicing[0][0], slicing[0][1])
+    else:
+        slice_x = slice(None)
+    if type(slicing[1]) is tuple:
+        slice_y = slice(slicing[1][0], slicing[1][1])
+    else:
+        slice_y = slice(None)
+    if type(slicing[2]) is tuple:
+        slice_z = slice(slicing[2][0], slicing[2][1])
+    else:
+        slice_z = slice(None)
+    slicing = (slice_x, 
+               slice_y, 
+               slice_z)
     return slicing
 
 
@@ -365,6 +380,7 @@ def transformation(ws, coordinates, align_to):
 
 def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to, slicing):
     # re-format slicing parameter
+    print('slicing',slicing)
     slicing = reformat_slicing_parameter(slicing)
     # cell alignment
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
@@ -377,7 +393,8 @@ def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to
             slicing=slicing,
             orientation=orientation,
             overwrite=False, verbose=False)
-
+    print('coordinates_transformed',coordinates_transformed)
+    print('annotation file',annotation_file)
     label = ano.label_points(coordinates_transformed,
                              annotation_file=annotation_file, key='order')
     names = ano.convert_label(label, key='order', value='name')
