@@ -1,42 +1,106 @@
-# 
-
 # User
 user : 'astella'
 # Experiment
 experiment : 'SexualImprinting'
 # Experimental group
-experimental_group : 'C57_MaleUrine_Exposure_cFos'
+#experimental_group : 'WILD_with_father'
+experimental_group : 'Black_wf_WholeBrain'
 # mouse: use only when doing a batch analysis. Otherwise run the analysis 
 # script with subject string (ex. python analysis_CellMap.py 'F1Control')
-subjects : ['F1Control','F2Unfam', 'F3Fam', 'F4Unfam', 'F5Fam', 'F6Unfam','F7Fam', 'F8Unfam', 'F9Fam', 'F10Control', 'F11Control',
-'F12Unfam', 'F13Fam', 'F14Unfam', 'F15Fam', 'F16Control']
+subjects : ['BL45_Control']
+
+#subjects : [
+# 'BL24Fam',
+# 'BL23Control',
+# 'BL22Unfam',
+# 'BL20Control',
+# 'BL19Unfam',
+# 'BL18Fam',
+# 'BL17Control',
+# 'BL21Fam',
+# 'BL32Control',
+# 'BL33Unfam',
+# 'BL34Fam',
+# 'BL35Unfam',
+# 'BL37Fam',
+# 'BL38Unfam',
+# 'BL39Unfam',
+# 'BL40Fam',
+# 'BL41Control',
+# 'BL43Fam',
+# 'BL44Control',
+# 'BL42Unfam']
+#subjects : [ 'SW25Control',
+# 'SW26Fam',
+# 'SW27Unfam',
+# 'SW28Unfam', 
+# 'SW30Fam',
+#  'SW31Unfam',
+# 'SW32Control',
+# 'SW33Female',
+# 'SW34Female',
+# 'SW35Fam',
+# 'SW38Unfam',
+# 'SW40Control',
+# 'SW41Unfam',
+# 'SW42Female',
+# 'SW43Fam',
+# 'SW44Female',
+# 'SW45Control',
+# 'SW46Fam',
+# 'SW47Control',
+# 'SW49Fam',
+# 'SW48Unfam']
+# subjects: ['SW19_Control', 
+# 'SW20_Unfam', 
+# 'SW21_Fam', 
+# 'SW22_Unfam',
+#  'SW23_Fam', 
+#  'SW24_Control', 
+#  'SW25_Control', 
+#  'SW26_Unfam', 
+#  'SW27_Fam', 
+#  'SW28_Unfam',
+#  'SW29_Fam',
+#  'SW30_Control',
+#  'SW31_Control',
+#  'SW32_Unfam',
+#  'SW33_Fam',
+#  'SW34_Unfam',
+#  'SW35_Fam']
+
 
 # resampling parameters
 source_res : [1.626, 1.626, 5]
 sink_res : [25,25,25]
 
 # orientation of the brain
-orientation : [1,2,3]
+orientation : [3,2,1]
+
+# alignment slicing
+slice_x: None
+slice_y: None
+slice_z: !!python/tuple [1,256]
 
 # test data parameters
 # slicing
-slice_x : !!python/tuple [2900, 3100]
-slice_y : !!python/tuple [4120, 4320]
-slice_z : !!python/tuple [620, 650]
+# slice_x : !!python/tuple [976, 1960]
+# slice_y : !!python/tuple [5100, 6000]
+# slice_z : !!python/tuple [640, 695]
 
 # parameters for detection
 shape_param : !!python/tuple [7,7]
-shape_detection_threshold : 700
+shape_detection_threshold : 2500
 
 # parameters for filtering
-source : !!python/tuple [10, 5000]
-size : !!python/tuple [20,100]
+source : !!python/tuple [10,60000]
+size : !!python/tuple [10,60000]
 
 # parameters for voxelization
 method : 'sphere'
 radius : [7,7,7]
 
 # rerun and debugging options
-rerun_alignment : False
-debug_detection : True
+rerun_alignment : True
+debug_detection : False
 align_to : 'cfos' # options: 'cfos'or 'cfos_auto'

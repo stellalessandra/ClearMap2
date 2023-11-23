@@ -11,6 +11,28 @@ import yaml
 from yaml import Loader
 import time
 
+def reformat_slicing_parameter(slicing):
+    # fix here: abbiamo bisogno di una slice_x, slice_y, slice_z e poi controllare che non siano None,
+    # altrimenti assegnare le tuple
+
+    # re-format slicing parameter
+    if type(slicing[0]) is tuple:
+        slice_x = slice(slicing[0][0], slicing[0][1])
+    else:
+        slice_x = slice(None)
+    if type(slicing[1]) is tuple:
+        slice_y = slice(slicing[1][0], slicing[1][1])
+    else:
+        slice_y = slice(None)
+    if type(slicing[2]) is tuple:
+        slice_z = slice(slicing[2][0], slicing[2][1])
+    else:
+        slice_z = slice(None)
+    slicing = (slice_x, 
+               slice_y, 
+               slice_z)
+    return slicing
+
 
 def convert_data_to_numpy(ws, directory, rerun=False):
     if rerun or not os.path.exists(directory + 'stitched.npy'):
@@ -18,7 +40,7 @@ def convert_data_to_numpy(ws, directory, rerun=False):
         source = ws.source('raw')
         # TODO: check if stitched file exists already
         sink = ws.filename('stitched')
-        io.delete_file(sink)
+#        io.delete_file(sink)
         io.convert(source, sink, processes=None, verbose=False)
         io.mhd.write_header_from_source(ws.filename('stitched'))
     else:
@@ -58,12 +80,14 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         print("Resampling has already been done!")
 
 
-def initialization_alignment(alignment_files_directory, orientation):
+def initialization_alignment(alignment_files_directory, orientation, slicing):
+    # re-format slicing parameter
+    slicing = reformat_slicing_parameter(slicing)
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
-        slicing=(
-            slice(None), slice(None), slice(
-                1, 256)), orientation=orientation, 
-                overwrite=False, verbose=False)
+        slicing=slicing,
+        orientation=orientation,
+        overwrite=False, 
+        verbose=False)
 
     # alignment parameter files
     align_channels_affine_file = io.join(alignment_files_directory,
@@ -160,7 +184,7 @@ def alignment_resampled_to_reference(ws,
         print("Already done!")
 
 
-def alignment(ws, directory, alignment_files_directory, orientation, align_to, rerun=False):
+def alignment(ws, directory, alignment_files_directory, orientation, align_to, slicing, rerun=False):
     """
     Script performing the alignment first on resampled data to autofluorescence
     and then to reference file
@@ -170,36 +194,36 @@ def alignment(ws, directory, alignment_files_directory, orientation, align_to, r
     annotation_file, reference_file, distance_file, \
         align_channels_affine_file, align_reference_affine_file, \
         align_reference_bspline_file = initialization_alignment(
-                alignment_files_directory, orientation)
+                alignment_files_directory=alignment_files_directory, 
+                orientation=orientation, 
+                slicing=slicing)
     
     if align_to == 'cfos':
-        alignment_resampled_to_reference(ws,
-                                         reference_file,
-                                         align_reference_affine_file,
-                                         align_reference_bspline_file,
-                                         directory,
-                                         rerun)
+        alignment_resampled_to_reference(ws=ws,
+                                         reference_file=reference_file,
+                                         align_reference_affine_file=align_reference_affine_file,
+                                         align_reference_bspline_file=align_reference_bspline_file,
+                                         directory=directory,
+                                         rerun=rerun)
     elif align_to == 'cfos_auto':
-        alignment_resampled_to_autofluorescence(ws,
-                                        align_channels_affine_file,
-                                        directory,
-                                        rerun)
+        alignment_resampled_to_autofluorescence(ws=ws,
+                                        align_channels_affine_file=align_channels_affine_file,
+                                        directory=directory,
+                                        rerun=rerun)
 
-        alignment_autofluorescence_to_reference(ws, 
-                                                reference_file,
-                                                align_reference_affine_file,
-                                                align_reference_bspline_file,
-                                                directory,
-                                                rerun)
+        alignment_autofluorescence_to_reference(ws=ws, 
+                                                reference_file=reference_file,
+                                                align_reference_affine_file=align_reference_affine_file,
+                                                align_reference_bspline_file=align_reference_bspline_file,
+                                                directory=directory,
+                                                rerun=rerun)
     else:
         raise ValueError('Align either to cfos or cfos_auto')
 
 
 def create_test_data(ws, slicing):
     # re-format slicing parameter
-    slicing = (slice(slicing[0][0], slicing[0][1]), 
-               slice(slicing[1][0], slicing[1][1]), 
-               slice(slicing[2][0], slicing[2][1]))
+    slicing = reformat_slicing_parameter(slicing)
     # select sublice for testing the pipeline
     ws.create_debug('stitched', slicing=slicing)
     ws.debug = False
@@ -274,7 +298,7 @@ def cell_detection(ws, slicing, shape, threshold_detection, debugging=True):
 
             
             
-def cell_filtering(ws, slicing, shape, thresholds_filtering, threshold_detection,
+def cell_filtering(ws, thresholds_filtering, threshold_detection,
                    debugging=True):
     # doing cell detection
     if debugging:
@@ -354,7 +378,10 @@ def transformation(ws, coordinates, align_to):
     return coordinates
 
 
-def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to):
+def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to, slicing):
+    # re-format slicing parameter
+    print('slicing',slicing)
+    slicing = reformat_slicing_parameter(slicing)
     # cell alignment
     source = ws.source('cells', postfix='filtered' + str(threshold_detection))
     coordinates = np.array([source[c] for c in 'xyz']).T
@@ -363,10 +390,11 @@ def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to
     # set the common annotation file
     annotation_file, reference_file, \
         distance_file = ano.prepare_annotation_files(
-            slicing=(slice(None), slice(None), slice(1, 256)),
+            slicing=slicing,
             orientation=orientation,
             overwrite=False, verbose=False)
-
+    print('coordinates_transformed',coordinates_transformed)
+    print('annotation file',annotation_file)
     label = ano.label_points(coordinates_transformed,
                              annotation_file=annotation_file, key='order')
     names = ano.convert_label(label, key='order', value='name')
@@ -381,10 +409,10 @@ def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to
     io.write(ws.filename('cells'), cells_data)
 
 
-def export_csv(ws):
+def export_csv(ws, threshold_detection):
     source = ws.source('cells')
     header = ', '.join([h[0] for h in source.dtype.names])
-    np.savetxt(ws.filename('cells', extension='csv'), source[:], header=header,
+    np.savetxt(ws.filename('cells', postfix=str(threshold_detection), extension='csv'), source[:], header=header,
                delimiter=',', fmt='%s')
 
 
@@ -417,7 +445,9 @@ def export_matlab(ws, threshold_detection, directory):
     scipy.io.savemat(filename, matStructure)  # generate and save the .mat file
 
 
-def voxelization(ws, orientation, method='sphere', radius=(7, 7, 7)):
+def voxelization(ws, orientation, slicing, method='sphere', radius=(7, 7, 7)):
+    # re-format slicing parameter
+    slicing = reformat_slicing_parameter(slicing)
     print("Voxelization...")
     source = ws.source('cells')
     coordinates = np.array([source[n] for n in ['xt', 'yt', 'zt']]).T
@@ -426,7 +456,7 @@ def voxelization(ws, orientation, method='sphere', radius=(7, 7, 7)):
     # To compare data from different animals we need to move coordinates back
     # to the same reference atlas
     annotation_file, reference_file, distance_file = ano.prepare_annotation_files(
-        slicing=(slice(None), slice(None), slice(1, 256)), orientation=orientation,
+        slicing=slicing, orientation=orientation,
         overwrite=False, verbose=True)
 
     # Unweighted
