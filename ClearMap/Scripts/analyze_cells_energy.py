@@ -1,6 +1,7 @@
 # Script with utility functions for cell count and energy calculation
 import os
 import numpy as np
+import itertools
 import pandas as pd
 import yaml
 from yaml import Loader
@@ -27,7 +28,12 @@ def list_subjects(root_directory):
     
     return subjects
 
-def clean_volumes_database(volumes):
+def clean_volumes_database():
+    query = pd.read_csv("query.csv")
+    table_s4 = pd.read_excel('table_S4_wang2020.xlsx', header=1)
+    temp = pd.concat([table_s4['structure ID'], table_s4['CCF Volume']], axis=1)
+    temp.columns = ['id', 'CCF_volume']
+    volumes = pd.merge(query, temp, how='left', left_on='id', right_on='id')
     # now we split the path of a single area into columns with all the upper layers
     structure_path = volumes['structure_id_path']
     #split volume into depths
@@ -47,9 +53,9 @@ def clean_volumes_database(volumes):
      'failed_facet']
     volumes = volumes.drop(columns_to_drop, axis=1)
     # replace N/D values from excel by np.nan
-    volumes['mean_volume'].replace(to_replace='#N/D', value=np.nan, inplace=True)
+    volumes['CCF_volume'].replace(to_replace='#N/D', value=np.nan, inplace=True)
     # force values to be floats
-    volumes["mean_volume"] = pd.to_numeric(volumes["mean_volume"])
+    volumes["CCF_volume"] = pd.to_numeric(volumes["CCF_volume"])
     volumes.columns
     return volumes
 
@@ -121,7 +127,7 @@ def calculate_energy_per_area(df_mouse, area, vol, source, size):
     if size != 0:
         df_mouse = df_mouse.loc[lambda df_mouse: df_mouse['size'] > size, :]
     energy = df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == area, :]['source'].sum()/ \
-             vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']
+             vol.loc[lambda vol: vol['safe_name'] == area, :]['CCF_volume']
     return energy
 
 
@@ -137,7 +143,7 @@ def aggregate_energy_per_area(df_mouse, vol, area, source, size):
     for child in children[1:]:
         # the other children count just by the sum of the intensities over the volume of the mother area
         area_energy += (df_mouse.loc[lambda df_mouse: df_mouse['area_name'] == child, :]['source'].sum()/ \
-             vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume']).values[0]
+             vol.loc[lambda vol: vol['safe_name'] == area, :]['CCF_volume']).values[0]
     return area_energy
 
 
@@ -145,19 +151,13 @@ def calculate_value_across_groups(experimental_groups, dict_results_across_mice,
     """
     Value can either be n_cells or energy
     """
-    df_control = pd.DataFrame()
-    df_fam = pd.DataFrame()
-    df_unfam = pd.DataFrame()
-    for subject in experimental_groups['Control']:
-        df_control['area'] = dict_results_across_mice[subject]['area']
-        df_control[subject] = dict_results_across_mice[subject][value]
-    for subject in experimental_groups['Fam']:
-        df_fam['area'] = dict_results_across_mice[subject]['area']
-        df_fam[subject] = dict_results_across_mice[subject][value]
-    for subject in experimental_groups['Unfam']:
-        df_unfam['area'] = dict_results_across_mice[subject]['area']
-        df_unfam[subject] = dict_results_across_mice[subject][value]
-    return df_control, df_fam, df_unfam
+    dfs = [pd.DataFrame() for i in range(len(experimental_groups.keys()))]
+    
+    for i, group in enumerate(experimental_groups.keys()):
+        for subject in experimental_groups[group]:
+            dfs[i]['area'] = dict_results_across_mice[subject]['area']
+            dfs[i][subject] = dict_results_across_mice[subject][value]
+    return dfs
 
 
 def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
@@ -168,81 +168,60 @@ def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
     # loop over all areas of given level and aggregate cells per area
     energy_list = [aggregate_energy_per_area(df_mouse=df_mouse, vol=vol, area=area, source=source, size=size) for area in area_list]
     # return df with area name and n_cells
-    df_cells_energy = {'area': area_list,
+    df = {'area': area_list,
                        'n_cells': n_cells_list,
                        'energy': energy_list
                        }
-    df_cells_energy= pd.DataFrame(df_cells_energy)
+    df= pd.DataFrame(df)
     # remove lowercase areas
-    df_cells_energy = df_cells_energy[df_cells_energy.area.str[0].str.isupper()]
+    df = df[df.area.str[0].str.isupper()]
     # remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
     df_levels = upls.create_df_levels(vol)
     macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
     list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
-    df_cells_energy = df_cells_energy[df_cells_energy['area'].isin(list_areas_to_keep)]
+    df = df[df['area'].isin(list_areas_to_keep)]
     
     #loop over all areas of given level and calculate density
+    total_volume = vol[vol['safe_name']=='root']['CCF_volume'].values[0]
     density_list = []
     rel_density_list = []
     for idx, area in enumerate(list_areas_to_keep):
-        volume = vol.loc[lambda vol: vol['safe_name'] == area, :]['mean_volume'].values[0]
-        n_cells = df_cells_energy.loc[df_cells_energy['area'] == area]['n_cells'].values[0]
+        volume = vol.loc[lambda vol: vol['safe_name'] == area, :]['CCF_volume'].values[0]
+        n_cells = df.loc[df['area'] == area]['n_cells'].values[0]
         density_list.append(n_cells/volume)
-        rel_density_list.append((n_cells/volume)/df_cells_energy['n_cells'].sum())
-    df_cells_energy['density'] = density_list
-    df_cells_energy['relative_density'] = rel_density_list
-    return df_cells_energy
+        rel_density_list.append((n_cells/volume)/(df['n_cells'].sum()/total_volume))
+    df['density'] = density_list
+    df['relative_density'] = rel_density_list
+    return df
 
 
-def test_across_groups(df_control, df_fam, df_unfam, test='ttest'):
+def test_across_groups(dfs, groups=['Control', 'Fam', 'Unfam'], test='ttest'):
     """
     Test can either be ttest or mannwhitneyu
     """
-    df_test = pd.DataFrame(columns=['area', 'pval_Control_vs_Fam', 
-                                     'pval_Control_vs_Unfam', 'pval_Fam_vs_Unfam'])
-    df_test['area'] = df_control['area']
+    #calculate groups combinations and column names for dataframe
+    combinations = list(itertools.combinations(groups, 2))
+    pval_keys = ['pval_'+pair[0]+'_vs_'+pair[1] for pair in combinations]
+    df_test = pd.DataFrame(columns=['area'] + pval_keys)
+    #fix area list
+    df_test['area'] = dfs[0]['area']
     # loop over areas
-    for area in df_control['area'].values:
-        # compare control and fam
-        # check if all values are not zero
-        if df_control[df_control['area'] == area].values[0][1:].sum() + \
-        df_fam[df_fam['area'] == area].values[0][1:].sum() != 0:
-            if test == 'ttest':
-                pval_control_fam = ttest_ind(df_control[df_control['area'] == area].values[0][1:],
-                                             df_fam[df_fam['area'] == area].values[0][1:])
-            elif test == 'mannwhitneyu':
-                pval_control_fam = mannwhitneyu(df_control[df_control['area'] == area].values[0][1:],
-                                                df_fam[df_fam['area'] == area].values[0][1:])
-            else:
-                raise ValueError('Test can either be ttest or mannwhitneyu')
-            # assign pvalue to dataframe
-            df_test['pval_Control_vs_Fam'][df_test.loc[df_test['area'] == area].index[0]] = pval_control_fam[1]
-
-        # compare control and unfam
-        # check if all values are not zero
-        if df_control[df_control['area'] == area].values[0][1:].sum() + \
-        df_unfam[df_unfam['area'] == area].values[0][1:].sum() != 0:
-            if test == 'ttest':
-                pval_control_unfam = ttest_ind(df_control[df_control['area'] == area].values[0][1:],
-                     df_unfam[df_unfam['area'] == area].values[0][1:])
-            else:
-                pval_control_unfam = mannwhitneyu(df_control[df_control['area'] == area].values[0][1:],
-                     df_unfam[df_unfam['area'] == area].values[0][1:])
-            # assign pvalue to dataframe
-            df_test['pval_Control_vs_Unfam'][df_test.loc[df_test['area'] == area].index[0]] = pval_control_unfam[1]
-
-        # compare fam and unfam
-        # check if all values are not zero
-        if df_fam[df_fam['area'] == area].values[0][1:].sum() + \
-        df_unfam[df_unfam['area'] == area].values[0][1:].sum() != 0:
-            if test =='ttest':
-                pval_fam_unfam = ttest_ind(df_fam[df_fam['area'] == area].values[0][1:],
-                     df_unfam[df_unfam['area'] == area].values[0][1:])
-            else:
-                pval_fam_unfam = mannwhitneyu(df_fam[df_fam['area'] == area].values[0][1:],
-                     df_unfam[df_unfam['area'] == area].values[0][1:])
-            # assign pvalue to dataframe
-            df_test['pval_Fam_vs_Unfam'][df_test.loc[df_test['area'] == area].index[0]] = pval_fam_unfam[1]
+    for area in dfs[0]['area'].values:
+        for i, (df1, df2) in enumerate(list(itertools.combinations(dfs, 2))):
+            # compare control and fam
+            # check if all values are not zero
+            if df1[df1['area'] == area].values[0][1:].sum() + \
+            df2[df2['area'] == area].values[0][1:].sum() != 0:
+                if test == 'ttest':
+                    pval = ttest_ind(df1[df1['area'] == area].values[0][1:],
+                                     df2[df2['area'] == area].values[0][1:])
+                elif test == 'mannwhitneyu':
+                    pval = mannwhitneyu(df1[df1['area'] == area].values[0][1:],
+                                        df2[df2['area'] == area].values[0][1:])
+                else:
+                    raise ValueError('Test can either be ttest or mannwhitneyu')
+                # assign pvalue to dataframe
+                df_test[pval_keys[i]][df_test.loc[df_test['area'] == area].index[0]] = pval[1]
     return df_test
 
 
