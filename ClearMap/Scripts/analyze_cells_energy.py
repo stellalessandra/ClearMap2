@@ -7,6 +7,7 @@ import yaml
 from yaml import Loader
 from scipy.stats import ttest_ind, mannwhitneyu
 import utils_PLS as upls
+import scipy
 
 def list_subjects(root_directory):
     try:
@@ -231,3 +232,57 @@ def cross_corr(df):
     corr_matrix = df.set_index('area').loc[
         ~(df.set_index('area')==0).all(axis=1)].dropna(axis=0).T.corr(method='pearson')
     return corr_matrix
+
+
+def compute_corr_pvalue(dfs_groups, group_labels, volumes, behavioral_data, significant_areas=None,
+                       correlation='Pearson'):
+    """
+    df_groups: list of pandas dataframe
+    group_labels: list of strings
+    volumes: volumes dataframe of Allen Brain Atlas
+    behavioral_data: behavioral variable registered
+    
+    Returns
+    -------
+    corr_df, pvalue_df: pandas dataframes of pearson correlation and corresponding pvalue
+    between the given dataframe rows and the behavioral variable
+    """
+    areas = [volumes[volumes['safe_name']==area]['acronym'].values[0] \
+             for area in dfs_groups[0].dropna().reset_index(drop=True)['area']]
+
+    corr_df = pd.DataFrame(columns=areas, index=group_labels)
+    pvalue_df = pd.DataFrame(columns=areas, index=group_labels)
+    
+    for i, (df_group, group_label) in enumerate(zip(dfs_groups, group_labels)):
+        corr = []
+        pvalue = []
+        df = df_group.dropna().reset_index(drop=True)
+
+        for area in areas:
+            area_name = volumes[volumes['acronym']==area]['safe_name'].values[0]
+            if correlation=='Pearson':
+                corr.append(scipy.stats.pearsonr(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[0])
+                pvalue.append(scipy.stats.pearsonr(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[1])
+            elif correlation=='Spearmann':
+                corr.append(scipy.stats.spearmanr(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[0])
+                pvalue.append(scipy.stats.spearmanr(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[1])
+            elif correlation=='Kendall':
+                corr.append(scipy.stats.kendalltau(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[0])
+                pvalue.append(scipy.stats.kendalltau(df.set_index('area').loc[area_name].values, 
+                                 behavioral_data[i].values)[1])
+            else:
+                raise ValueError('Wrong correlation parameter')
+        corr_df.loc[group_label] = corr
+        pvalue_df.loc[group_label] = pvalue
+    if significant_areas is not None:
+        corr_df = corr_df[significant_areas]
+        pvalue_df = pvalue_df[significant_areas]
+    corr_df = corr_df[corr_df.columns].astype(float)
+    pvalue_df = pvalue_df[pvalue_df.columns].astype(float)
+    return corr_df, pvalue_df
+    
