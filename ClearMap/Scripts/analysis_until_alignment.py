@@ -101,13 +101,13 @@ convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
 
 
 ## resampling of autofluorescence
-#resampling(ws=ws, source_res=source_res, sink_res=sink_res,
-#         align_to=align_to, directory=data_directory)
-#
-#
+resampling(ws=ws, source_res=source_res, sink_res=sink_res,
+        align_to=align_to, directory=data_directory)
+
+
 ## alignment of resampled to autofluorescence and to reference
-#alignment(ws=ws, alignment_files_directory=resources_directory, 
-#           align_to=align_to, orientation=orientation,
-#           directory=data_directory, slicing=slicing,
-#           rerun=rerun)
+alignment(ws=ws, alignment_files_directory=resources_directory, 
+          align_to=align_to, orientation=orientation,
+          directory=data_directory, slicing=slicing,
+          rerun=rerun)
 
