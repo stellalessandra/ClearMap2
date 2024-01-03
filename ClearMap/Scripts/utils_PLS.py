@@ -253,7 +253,7 @@ def plot_panel_saliences(batch, variable, df_levels):
     axes[2].tick_params(axis='x', labelrotation=90)
     axes[0].set_xlabel('')
     axes[0].set(xticklabels=[])
-    axes[0].set_ylim(0,10)
+    axes[0].set_ylim(-3,3)
     axes[1].set_xlabel('')
     axes[1].set(xticklabels=[])
     axes[0].set_title('First salience')
@@ -265,8 +265,8 @@ def plot_panel_saliences(batch, variable, df_levels):
     axes[2].get_legend().remove()
     n = 4  # Keeps every 7th label
     for i in range(3):
-        axes[i].axhline(y=1.96, linestyle='-.', color='darkgrey')
-        axes[i].axhline(y=-1.96, linestyle='-.', color='darkgrey')
+        axes[i].axhline(y=2.57, linestyle='-.', color='darkgrey')
+        axes[i].axhline(y=-2.57, linestyle='-.', color='darkgrey')
         [l.set_visible(False) for (i,l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
     plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.png')
     plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.svg')

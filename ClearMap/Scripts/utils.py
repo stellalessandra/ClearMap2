@@ -21,10 +21,8 @@ def list_subjects():
     
     return subjects
 
-def divide_in_exp_groups(list_subjects):
-    experimental_groups = {'Control':[],
-                          'Unfam':[],
-                          'Fam':[]}
+def divide_in_exp_groups(list_subjects, group_labels = ['Control', 'Fam', 'Unfam']):
+    experimental_groups = {label:[] for label in group_labels}
     for subject in list_subjects:
         for exp_group in experimental_groups.keys():
             if exp_group in subject:
