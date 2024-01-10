@@ -62,7 +62,7 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         "verbose": False,
     }
     if align_to == 'cfos_auto':
-        resample_parameter_auto = {
+        resample_parameter_auto = { 
         "source_resolution" : (source_res[0], source_res[1], source_res[2]*2),
         "sink_resolution"   : (sink_res[0], sink_res[1], sink_res[2]),
         "processes" : 4,
@@ -70,7 +70,7 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         }
     if rerun or not os.path.exists(directory + 'resampled.tif'):
         io.delete_file(ws.filename('resampled'))
-        res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
+        res.resample(ws.filename('stitched'), sink=ws.filename('resampled'),
                      **resample_parameter)
         if align_to == 'cfos_auto':
             res.resample(ws.filename('autofluorescence'), 
