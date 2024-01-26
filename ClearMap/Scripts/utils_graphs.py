@@ -12,8 +12,9 @@ import networkx as nx
 import matplotlib.colors as cm
 from matplotlib.lines import Line2D
 
-def select_significant_areas(df, threshold=0.05):
-    tests = ['pval_Control_vs_Fam', 'pval_Control_vs_Unfam', 'pval_Fam_vs_Unfam']
+def select_significant_areas(df, threshold=0.05, groups=['Control', 'Fam', 'Unfam']):
+    combinations = list(itertools.combinations(groups, 2))
+    tests = ['pval_'+pair[0]+'_vs_'+pair[1] for pair in combinations]
     d = []
     for key in tests:
         d.append(df.sort_values(by=key)[[
@@ -101,7 +102,7 @@ def plot_graph(G, df_levels, order, volumes, title, ax, edge_cmap=plt.cm.seismic
     return ax
 
 
-def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True):
+def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y_lim=None):
     
     # create tables
     allen_order = list(volumes[volumes['st_level']==8]['acronym'])
@@ -139,7 +140,8 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True):
     ax1.set_ylabel("Degree")
     ax1.set_xlabel("Area")
     # SET Y LIM
-    ax1.set_ylim(0,16)
+    if y_lim is not None:
+        ax1.set_ylim(0,y_lim)
     ax1.tick_params(axis='x', labelrotation=90)
     sns.despine(left=False, bottom=False)
 

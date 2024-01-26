@@ -193,17 +193,18 @@ def create_df_levels(volumes):
     return df_levels
         
 
-def plot_contrasts(df_data, index, ax):
+def plot_contrasts(df_data, index, ax, palette):
     df = df_data.iloc[index]
     df = pd.DataFrame(df).T
     df = pd.melt(df)
     sns.barplot(y = df.value, 
         x = df.variable, 
         ax=ax,
-        data=df)
+        data=df,
+        palette=palette)
     
         
-def plot_saliences(df_data, index, ax, df_levels):
+def plot_saliences(df_data, index, ax, df_levels, palette):
     df = df_data.iloc[index]
     df = pd.DataFrame(df).T
     df = pd.melt(df)
@@ -213,63 +214,53 @@ def plot_saliences(df_data, index, ax, df_levels):
                 ax=ax, 
                 hue=df['Brain Hierarchy'],
                 data=df,
-                dodge=False)
+                dodge=False,
+                palette=palette)
     
 
-def plot_panel_contrasts(batch, variable):
+def plot_panel_contrasts(batch, variable, palette='tab10'):
     contrasts = pd.read_csv('./results_pls/'+ batch +'_'+ variable +'_contrasts.csv')
     contrasts = contrasts.rename(columns={"group_Control": "Control", 
                                                   "group_Fam": "Fam", 
                                                   "group_Unfam":"Unfam"})
     fig, axes = plt.subplots(1,3, sharey='row', figsize=(10,5))
-    plot_contrasts(df_data=contrasts, index=0, ax=axes[0])
-    plot_contrasts(df_data=contrasts, index=1, ax=axes[1])
-    plot_contrasts(df_data=contrasts, index=2, ax=axes[2])
-    axes[0].set_ylabel('Contrast')
-    axes[1].set_ylabel('')
-    axes[2].set_ylabel('')
-    axes[0].tick_params(axis='x', labelrotation=90)
-    axes[1].tick_params(axis='x', labelrotation=90)
-    axes[2].tick_params(axis='x', labelrotation=90)
-    axes[0].set_title('First contrast')
-    axes[1].set_title('Second contrast')
-    axes[2].set_title('Third contrast')
+    titles = ['First contrast',
+             'Second contrast',
+             'Third contrast']
     for i in range(3):
+        plot_contrasts(df_data=contrasts, index=i, ax=axes[i], palette=palette)
+        axes[i].tick_params(axis='x', labelrotation=90)
+        axes[i].set_title(titles[i])
+        axes[i].set_ylabel('Contrast') if i==0 else axes[i].set_ylabel('')
         axes[i].set(xlabel=None)
     plt.tight_layout()
-    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_contrasts_all_areas.png')
-    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_contrasts_all_areas.svg')
+    return fig, axes
     
     
-def plot_panel_saliences(batch, variable, df_levels):
+def plot_panel_saliences(batch, variable, df_levels, palette=sns.color_palette("Paired")):
     saliences = pd.read_csv('./results_pls/'+ batch +'_'+ variable +'_saliences.csv')
     fig, axes = plt.subplots(3,1, sharex='row', figsize=(13,7))
     plt.subplots_adjust(top=0.9, left=0.03, right=0.8)
-    plot_saliences(df_data=saliences, index=0, ax=axes[0], df_levels=df_levels)
-    plot_saliences(df_data=saliences, index=1, ax=axes[1], df_levels=df_levels)
-    plot_saliences(df_data=saliences, index=2, ax=axes[2], df_levels=df_levels)
-    axes[0].tick_params(axis='x', labelrotation=90)
-    axes[1].tick_params(axis='x', labelrotation=90)
-    axes[2].tick_params(axis='x', labelrotation=90)
-    axes[0].set_xlabel('')
-    axes[0].set(xticklabels=[])
-    axes[0].set_ylim(-3,3)
-    axes[1].set_xlabel('')
-    axes[1].set(xticklabels=[])
-    axes[0].set_title('First salience')
-    axes[1].set_title('Second salience')
-    axes[2].set_title('Third salience')
+    titles = ['First salience',
+         'Second salience',
+         'Third salience']
+    n = 4  # Keeps every 7th label
+    for i in range(3):
+        plot_saliences(df_data=saliences, index=i, ax=axes[i], 
+                       df_levels=df_levels, palette=palette)
+        axes[i].tick_params(axis='x', labelrotation=90)
+        axes[i].axhline(y=2.57, linestyle='-.', color='darkgrey')
+        axes[i].axhline(y=-2.57, linestyle='-.', color='darkgrey')
+        [l.set_visible(False) for (i,l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
+        axes[i].set_title(titles[i])
+        if i!=2:
+            axes[i].set_xlabel('')
+            axes[i].set(xticklabels=[])
     axes[2].set_xlabel('Area')
     axes[0].legend(loc='right', bbox_to_anchor=(1.25,0.3))
     axes[1].get_legend().remove()
     axes[2].get_legend().remove()
-    n = 4  # Keeps every 7th label
-    for i in range(3):
-        axes[i].axhline(y=2.57, linestyle='-.', color='darkgrey')
-        axes[i].axhline(y=-2.57, linestyle='-.', color='darkgrey')
-        [l.set_visible(False) for (i,l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
-    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.png')
-    plt.savefig('./results_pls/'+ batch +'_'+ variable +'_pls_saliences_all_areas.svg')
+    return fig, axes
     
     
     
