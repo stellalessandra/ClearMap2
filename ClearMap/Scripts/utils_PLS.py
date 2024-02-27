@@ -223,6 +223,9 @@ def plot_panel_contrasts(batch, variable, palette='tab10'):
     contrasts = contrasts.rename(columns={"group_Control": "Control", 
                                                   "group_Fam": "Fam", 
                                                   "group_Unfam":"Unfam"})
+    contrasts = contrasts.rename(columns={"group_observer": "observer", 
+                                                  "group_demonstrator": "demonstrator", 
+                                                  "group_noshock":"noshock"})
     fig, axes = plt.subplots(1,3, sharey='row', figsize=(10,5))
     titles = ['First contrast',
              'Second contrast',

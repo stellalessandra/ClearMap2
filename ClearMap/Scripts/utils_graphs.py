@@ -12,17 +12,6 @@ import networkx as nx
 import matplotlib.colors as cm
 from matplotlib.lines import Line2D
 
-def select_significant_areas(df, threshold=0.05, groups=['Control', 'Fam', 'Unfam']):
-    combinations = list(itertools.combinations(groups, 2))
-    tests = ['pval_'+pair[0]+'_vs_'+pair[1] for pair in combinations]
-    d = []
-    for key in tests:
-        d.append(df.sort_values(by=key)[[
-        'area', key]]['area'][df.sort_values(by=key)[[
-        'area', key]][key] < threshold].to_list())
-    # return flattened list
-    return np.unique(list(itertools.chain.from_iterable(d)))
-
 
 def create_graph(corr_matrix, volumes, significant_areas=0, corr_threshold=0.85, correlations='both'):
     df_graph = corr_matrix.stack().reset_index(level=0)
@@ -88,13 +77,34 @@ def get_colors(G, df_levels, order, volumes, sorting=False):
     return list_colors, colors_dict
 
 
-def plot_graph(G, df_levels, order, volumes, title, ax, edge_cmap=plt.cm.seismic):
+# def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, edge_cmap=plt.cm.seismic):
+#     # Plot the network:
+#     pos = nx.circular_layout(sorted(list(G.nodes()),
+#       key = order.index), scale=20)
+#     list_colors = get_colors(G, df_levels, order, volumes=volumes)[0]
+#     nx.draw(G, with_labels=True, node_color=list_colors,
+#             node_size=200,font_size=fontsize, pos=pos, ax=ax, 
+#             edge_cmap=edge_cmap, width=1,
+#             edge_color=[G[u][v]['weight'] for u, v in G.edges])
+    
+#     # relabel graphs
+#     ax.set_title(title)
+#     return ax
+
+
+def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, edge_cmap=plt.cm.seismic):
+    allen_order = list(volumes[volumes['st_level']==8]['acronym'])
+    areas = sorted(list(G.nodes()), key = order.index)
+    degrees = [G.degree()[area] for area in G.nodes]
+    
     # Plot the network:
     pos = nx.circular_layout(sorted(list(G.nodes()),
-      key = order.index))
+      key = order.index), scale=20)
     list_colors = get_colors(G, df_levels, order, volumes=volumes)[0]
-    nx.draw(G, with_labels=True, node_color=list_colors, 
-            node_size=200,font_size=12, pos=pos, ax=ax, edge_cmap=edge_cmap, width=1,
+    nx.draw(G, with_labels=True, node_color=list_colors,
+            node_size=[v * 100 for v in degrees],
+            font_size=fontsize, pos=pos, ax=ax, 
+            edge_cmap=edge_cmap, width=1,
             edge_color=[G[u][v]['weight'] for u, v in G.edges])
     
     # relabel graphs
@@ -102,14 +112,15 @@ def plot_graph(G, df_levels, order, volumes, title, ax, edge_cmap=plt.cm.seismic
     return ax
 
 
-def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y_lim=None):
+def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y_lim=None, show_degrees=True,
+                      show_graph=True, figsize=(8,8), fontsize=12):
     
     # create tables
     allen_order = list(volumes[volumes['st_level']==8]['acronym'])
     df_levels = upls.create_df_levels(volumes)
     
     # create figure
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=figsize)
     plt.subplots_adjust(left=0.25)
 
     edge_cmap = plt.cm.get_cmap('Greys')
@@ -117,33 +128,42 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y
     # Create a gridspec for adding subplots of different sizes
     axgrid = fig.add_gridspec(5, 4)
     # plot graph
-    ax0 = fig.add_subplot(axgrid[0:3, :])
-    plot_graph(G=G, order=allen_order, volumes=volumes, df_levels=df_levels, ax=ax0, title=title,
-              edge_cmap=edge_cmap)
+    if (show_graph==True and show_degrees==True):
+        ax0 = fig.add_subplot(axgrid[0:3, :])
+        ax1 = fig.add_subplot(axgrid[3:, :])
+        plot_graph(G=G, order=allen_order, volumes=volumes, df_levels=df_levels, ax=ax0, title=title,
+          edge_cmap=edge_cmap, fontsize=fontsize)
+    elif (show_graph==True and show_degrees==False):
+        ax0 = fig.add_subplot(axgrid[:, :])
+        plot_graph(G=G, order=allen_order, volumes=volumes, df_levels=df_levels, ax=ax0, title=title,
+          edge_cmap=edge_cmap, fontsize=fontsize)
+    elif (show_graph==False and show_degrees==True):
+        ax1 = fig.add_subplot(axgrid[:, :])
+    elif (show_graph==False and show_degrees==False):
+        raise ValueError("show_graph and show_degrees cannot both be set to False")
 
     colors_dict = get_colors(G, df_levels=df_levels, order=allen_order, volumes=volumes)[1]
     areas = sorted(list(G.nodes()), key = allen_order.index)
     degrees = [G.degree()[area] for area in areas]
-    
-    # plot degrees
-    ax1 = fig.add_subplot(axgrid[3:, :])
-    ax1.bar(x= areas, 
-            height= degrees)
+    if show_degrees:
+        # plot degrees
+        ax1.bar(x= areas, 
+                height= degrees)
 
-    for idx, color in enumerate(get_colors(G, 
-                                           df_levels=df_levels, 
-                                           order=allen_order,
-                                           sorting=True,
-                                           volumes=volumes)[0]):
-        ax1.get_children()[idx].set_color(color)
+        for idx, color in enumerate(get_colors(G, 
+                                               df_levels=df_levels, 
+                                               order=allen_order,
+                                               sorting=True,
+                                               volumes=volumes)[0]):
+            ax1.get_children()[idx].set_color(color)
 
-    ax1.set_ylabel("Degree")
-    ax1.set_xlabel("Area")
-    # SET Y LIM
-    if y_lim is not None:
-        ax1.set_ylim(0,y_lim)
-    ax1.tick_params(axis='x', labelrotation=90)
-    sns.despine(left=False, bottom=False)
+        ax1.set_ylabel("Degree")
+        ax1.set_xlabel("Area")
+        # SET Y LIM
+        if y_lim is not None:
+            ax1.set_ylim(0,y_lim)
+        ax1.tick_params(axis='x', labelrotation=90)
+        sns.despine(left=False, bottom=False)
 
     if show_legend:
         legend_elements = [Line2D([0], [0], marker='o', color='w', label=area,
@@ -165,5 +185,11 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y
     if show_colorbar:
         cbar = plt.colorbar(sm, ax=ax0,fraction=0.032)
         cbar.set_label('Correlations', rotation=270, labelpad=13)
-
-    return fig, ax0, ax1
+    if (show_graph==True and show_degrees==True):
+        return fig, ax0, ax1
+    elif (show_graph==True and show_degrees==False):
+        return fig, ax0
+    elif (show_graph==False and show_degrees==True):
+        return fig, ax1
+    elif (show_graph==False and show_degrees==False):
+        raise ValueError("show_graph and show_degrees cannot both be set to False")
