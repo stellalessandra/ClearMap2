@@ -256,6 +256,7 @@ def plot_panel_saliences(batch, variable, df_levels, palette=sns.color_palette("
         axes[i].axhline(y=-2.57, linestyle='-.', color='darkgrey')
         [l.set_visible(False) for (i,l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
         axes[i].set_title(titles[i])
+        axes[i].set_ylabel('z-score(salience)')
         if i!=2:
             axes[i].set_xlabel('')
             axes[i].set(xticklabels=[])
