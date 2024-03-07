@@ -280,9 +280,61 @@ def compute_corr_pvalue(dfs_groups, group_labels, volumes, behavioral_data, sign
         corr_df.loc[group_label] = corr
         pvalue_df.loc[group_label] = pvalue
     if significant_areas is not None:
-        corr_df = corr_df[significant_areas]
-        pvalue_df = pvalue_df[significant_areas]
+        final_areas = set(corr_df.columns).intersection(set(significant_areas))
+        corr_df = corr_df[final_areas]
+        pvalue_df = pvalue_df[final_areas]
     corr_df = corr_df[corr_df.columns].astype(float)
     pvalue_df = pvalue_df[pvalue_df.columns].astype(float)
     return corr_df, pvalue_df
+
+
+def select_areas(df, threshold=0.05, groups=['Control', 'Fam', 'Unfam']):
+    combinations = list(itertools.combinations(groups, 2))
+    tests = ['pval_'+pair[0]+'_vs_'+pair[1] for pair in combinations]
+    d = []
+    for key in tests:
+        d.append(df.sort_values(by=key)[[
+        'area', key]]['area'][df.sort_values(by=key)[[
+        'area', key]][key] < threshold].to_list())
+    # return flattened list
+    return np.unique(list(itertools.chain.from_iterable(d)))
+
+
+def select_significant_areas(dictionary, experimental_groups, batch,  
+                             test='mannwhitneyu', threshold_test=0.05,
+                             threshold_pls=2.56,
+                            value_test='n_cells', value_pls='relative_density'):
+    
+    volumes = clean_volumes_database()
+    dfs = \
+    calculate_value_across_groups(experimental_groups=experimental_groups, 
+                                  dict_results_across_mice=dictionary, 
+                                  value=value_test)
+    groups = list(experimental_groups.keys())
+    df_test = test_across_groups(dfs,
+                                 test=test,
+                                groups=groups)
+
+    combinations = list(itertools.combinations(groups, 2))
+    tests = ['pval_'+pair[0]+'_vs_'+pair[1] for pair in combinations]
+    
+    d = []
+    for key in tests:
+        d.append(df_test.sort_values(by=key)[[
+        'area', key]]['area'][df_test.sort_values(by=key)[[
+        'area', key]][key] < threshold_test].to_list())
+    # return flattened list
+    sig_areas_test = np.unique(list(itertools.chain.from_iterable(d)))
+    
+    #now find significant areas for PLS
+    overlap = {'ncells':[], 'energy':[], 'density':[], 'relative_density':[]}
+    for variable in overlap.keys():
+        overlap[variable] = set(upls.identify_pls_sig_areas(saliences=pd.read_csv(
+            './results_pls/'+ batch +'_'+ variable +'_saliences.csv'), 
+                                               threshold=threshold_pls, 
+                                               volumes=clean_volumes_database()))
+    significant_areas = overlap[value_pls].union(list(sig_areas_test))
+    return significant_areas
+    
+    
     
