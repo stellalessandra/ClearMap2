@@ -410,8 +410,9 @@ def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to
 
 
 def export_csv(ws, threshold_detection):
+    # source = ws.source('cells', postfix=str(threshold_detection))
     source = ws.source('cells')
-    header = ', '.join([h[0] for h in source.dtype.names])
+    header = ', '.join([h[0] for h in source.dtype.names])+', l1, l2, l3'
     np.savetxt(ws.filename('cells', postfix=str(threshold_detection), extension='csv'), source[:], header=header,
                delimiter=',', fmt='%s')
 
