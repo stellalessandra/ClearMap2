@@ -3,27 +3,17 @@ from yaml import Loader
 import os
 import re
 
-def list_subjects():
-    try:
-        with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
-            config = yaml.load(stream, Loader=Loader)
-    except FileNotFoundError:
-        with open("configfile.yaml", 'r') as stream:
-            config = yaml.load(stream, Loader=Loader) 
-    user = config['user']
-    experiment = config['experiment']
-    experimental_group = config['experimental_group']
-    
-    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
-                + experimental_group + '/'
-                
-    subjects = [name for name in os.listdir(data_directory) \
-                if os.path.isdir(os.path.join(data_directory, name))]
-    
-    return subjects
 
-
-def split_string(input_string):
+def _split_string(input_string):
+    """
+    This function splits a string into two parts based on a regular expression pattern.
+    
+    Args:
+        input_string (str): The string to be split.
+        
+    Returns:
+        list: A list containing the two parts of the split string.
+    """
     # Define the regular expression pattern
     pattern = re.compile(r'([A-Za-z]+[0-9]+)(.*)')
 
@@ -41,13 +31,64 @@ def split_string(input_string):
     else:
         # If there's no match, return the original string
         return [input_string]
+    
+
+def list_subjects():
+    """
+    This function reads a configuration file and returns a list of subjects 
+    from a specific directory.
+    
+    Returns:
+        subjects (list): A list of subject names.
+    """
+    # Try to open the configuration file in the specified directory
+    try:
+        with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
+            config = yaml.load(stream, Loader=Loader)
+    # If the file is not found in the specified directory, look for it in the current directory
+    except FileNotFoundError:
+        with open("configfile.yaml", 'r') as stream:
+            config = yaml.load(stream, Loader=Loader) 
+    
+    # Extract user, experiment, and experimental group information from the configuration file
+    user = config['user']
+    experiment = config['experiment']
+    experimental_group = config['experimental_group']
+    
+    # Construct the data directory path
+    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+                + experimental_group + '/'
+                
+    # Get a list of all directories (subjects) in the data directory
+    subjects = [name for name in os.listdir(data_directory) \
+                if os.path.isdir(os.path.join(data_directory, name))]
+    
+    return subjects
 
     
 def divide_in_exp_groups(list_subjects, group_labels = ['Control', 'Fam', 'Unfam']):
+    """
+    This function divides subjects into experimental groups based on their names.
+    
+    Args:
+        list_subjects (list): A list of subject names.
+        group_labels (list, optional): A list of experimental group labels. 
+            Defaults to ['Control', 'Fam', 'Unfam'].
+            
+    Returns:
+        dict: A dictionary where the keys are the experimental group labels and 
+            the values are lists of subjects belonging to each group.
+    """
+    # Initialize a dictionary to hold the experimental groups
     experimental_groups = {label:[] for label in group_labels}
+    
+    # Loop over the subjects
     for subject in list_subjects:
+        # Loop over the experimental groups
         for exp_group in experimental_groups.keys():
+            # If the experimental group label is in the subject name, add the subject to the group
             if exp_group in split_string(input_string=subject):
                 experimental_groups[exp_group].append(subject)
+    
     return experimental_groups
      
