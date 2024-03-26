@@ -87,7 +87,7 @@ def divide_in_exp_groups(list_subjects, group_labels = ['Control', 'Fam', 'Unfam
         # Loop over the experimental groups
         for exp_group in experimental_groups.keys():
             # If the experimental group label is in the subject name, add the subject to the group
-            if exp_group in split_string(input_string=subject):
+            if exp_group in _split_string(input_string=subject):
                 experimental_groups[exp_group].append(subject)
     
     return experimental_groups
