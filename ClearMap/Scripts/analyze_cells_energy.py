@@ -306,7 +306,8 @@ def calculate_value_across_groups(experimental_groups, dict_results_across_mice,
 
 
 
-def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
+def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0,
+                                    macroareas_to_remove=['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']):
     """
     This function calculates the number of cells, energy, density 
     and relative density per level.
@@ -346,7 +347,6 @@ def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0):
 
     # Remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
     df_levels = upls.create_df_levels(vol)
-    macroareas_to_remove = ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']
     list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
     df = df[df['area'].isin(list_areas_to_keep)]
     
