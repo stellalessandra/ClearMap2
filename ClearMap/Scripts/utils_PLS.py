@@ -358,24 +358,18 @@ def plot_panel_contrasts(batch, variable, palette='tab10'):
     contrasts = pd.read_csv(f'./results_pls/{batch}_{variable}_contrasts.csv')
     
     # Rename columns for better readability
-    contrasts = contrasts.rename(columns={"group_Control": "Control", 
-                                                  "group_Fam": "Fam", 
-                                                  "group_Unfam":"Unfam"})
-    contrasts = contrasts.rename(columns={"group_observer": "observer", 
-                                                  "group_demonstrator": "demonstrator", 
-                                                  "group_noshock":"noshock"})
+    contrasts = contrasts.rename(columns={col: col.split('_')[1] for col in contrasts.columns if col.startswith('group_')})
+    
+    # number of contrasts
+    n_contrasts = contrasts.shape[0]
     
     # Create a 1x3 grid of subplots (one for each contrast)
-    fig, axes = plt.subplots(1, 3, sharey='row', figsize=(10, 5))
-    
-    # Titles for each subplot
-    titles = ['First contrast', 'Second contrast', 'Third contrast']
+    fig, axes = plt.subplots(1, n_contrasts, sharey='row', figsize=(10, 5))
     
     # Plot each contrast
-    for i in range(3):
+    for i in range(n_contrasts):
         plot_contrasts(df_data=contrasts, index=i, ax=axes[i], palette=palette)
         axes[i].tick_params(axis='x', labelrotation=90)
-        axes[i].set_title(titles[i])
         if i == 0:
             axes[i].set_ylabel('Contrast')  # Set y-label for the first subplot
         else:
@@ -403,18 +397,19 @@ def plot_panel_saliences(batch, variable, df_levels, palette=sns.color_palette("
     # Read the saliences data from a CSV file
     saliences = pd.read_csv(f'./results_pls/{batch}_{variable}_saliences.csv')
     
-    # Create a 3x1 grid of subplots (one for each salience)
-    fig, axes = plt.subplots(3, 1, sharex='row', figsize=(13, 7))
-    plt.subplots_adjust(top=0.9, left=0.03, right=0.8)
+    # number of saliences
+    n_saliences = saliences.shape[0]  
     
-    # Titles for each subplot
-    titles = ['First salience', 'Second salience', 'Third salience']
+    # Create a nx1 grid of subplots (one for each salience)
+    fig, axes = plt.subplots(n_saliences, 1, sharex='row', figsize=(13, 7))
+    plt.subplots_adjust(top=0.9, left=0.03, right=0.8)
+     
     
     # Keeps every nth label on the x-axis
     n = 4
     
     # Plot each salience
-    for i in range(3):
+    for i in range(n_saliences):
         plot_saliences(df_data=saliences, index=i, ax=axes[i], df_levels=df_levels, palette=palette)
         axes[i].tick_params(axis='x', labelrotation=90)
         axes[i].axhline(y=2.57, linestyle='-.', color='darkgrey')
@@ -423,22 +418,21 @@ def plot_panel_saliences(batch, variable, df_levels, palette=sns.color_palette("
         # Hide some x-axis labels
         [l.set_visible(False) for (i, l) in enumerate(axes[i].xaxis.get_ticklabels()) if i % n != 0]
         
-        axes[i].set_title(titles[i])
         axes[i].set_ylabel('z-score(salience)')
         
-        if i != 2:
+        if i != n_saliences-1:
             axes[i].set_xlabel('')
             axes[i].set(xticklabels=[])
     
     # Set x-label for the last subplot
-    axes[2].set_xlabel('Area')
+    axes[n_saliences-1].set_xlabel('Area')
     
     # Add legend to the first subplot
     axes[0].legend(loc='right', bbox_to_anchor=(1.25, 0.3))
     
     # Remove legends from the other two subplots
-    axes[1].get_legend().remove()
-    axes[2].get_legend().remove()
+    for i in range(1,n_saliences):
+        axes[i].get_legend().remove()
     
     return fig, axes
 
