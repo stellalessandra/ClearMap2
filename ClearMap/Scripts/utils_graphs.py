@@ -87,7 +87,7 @@ def create_graph(corr_matrix, volumes, significant_areas=0, corr_threshold=0.85,
     return G
 
 
-def get_colors(G, df_levels, order, volumes, sorting=False):
+def get_colors(G, df_levels, order, volumes, macroareas_to_exclude, sorting=False):
     """
     Generates a list of colors for nodes in a graph based on specified criteria.
 
@@ -108,7 +108,7 @@ def get_colors(G, df_levels, order, volumes, sorting=False):
 
     # Remove specific areas
     areas_level5 = [macroarea for macroarea in areas_level5
-                    if macroarea not in ['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']]
+                    if macroarea not in macroareas_to_exclude]
 
     # Generate colors
     colors = [cm.to_hex(plt.cm.Paired(i)) for i in range(len(areas_level5))]
@@ -128,7 +128,7 @@ def get_colors(G, df_levels, order, volumes, sorting=False):
     return list_colors, colors_dict
 
 
-def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, edge_cmap=plt.cm.seismic):
+def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, macroareas_to_exclude, edge_cmap=plt.cm.seismic):
     """
     Plots a network graph with specified attributes.
 
@@ -158,7 +158,8 @@ def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, edge_cmap=plt.
     pos = nx.circular_layout(sorted(list(G.nodes()), key=order.index), scale=20)
 
     # Get node colors
-    list_colors = get_colors(G, df_levels, order, volumes=volumes)[0]
+    list_colors = get_colors(G, df_levels, order, volumes=volumes, 
+                             macroareas_to_exclude=macroareas_to_exclude)[0]
 
     # Draw the graph
     nx.draw(G, with_labels=True, node_color=list_colors,
@@ -174,7 +175,8 @@ def plot_graph(G, df_levels, order, volumes, title, ax, fontsize, edge_cmap=plt.
 
 
 def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y_lim=None, show_degrees=True,
-                      show_graph=True, figsize=(8, 8), fontsize=12):
+                      show_graph=True, figsize=(8, 8), fontsize=12,
+                      macroareas_to_exclude=['Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei']):
     """
     Creates a figure displaying a graph along with degree information.
 
@@ -212,18 +214,19 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y
         ax0 = fig.add_subplot(axgrid[0:3, :])
         ax1 = fig.add_subplot(axgrid[3:, :])
         plot_graph(G=G, order=allen_order, volumes=volumes, df_levels=df_levels, ax=ax0, title=title,
-                   edge_cmap=edge_cmap, fontsize=fontsize)
+                   edge_cmap=edge_cmap, fontsize=fontsize, macroareas_to_exclude=macroareas_to_exclude)
     elif show_graph and not show_degrees:
         ax0 = fig.add_subplot(axgrid[:, :])
         plot_graph(G=G, order=allen_order, volumes=volumes, df_levels=df_levels, ax=ax0, title=title,
-                   edge_cmap=edge_cmap, fontsize=fontsize)
+                   edge_cmap=edge_cmap, fontsize=fontsize, macroareas_to_exclude=macroareas_to_exclude)
     elif not show_graph and show_degrees:
         ax1 = fig.add_subplot(axgrid[:, :])
     else:
         raise ValueError("show_graph and show_degrees cannot both be set to False")
 
     # Get colors and degrees
-    colors_dict = get_colors(G, df_levels=df_levels, order=allen_order, volumes=volumes)[1]
+    colors_dict = get_colors(G, df_levels=df_levels, order=allen_order, volumes=volumes,
+                            macroareas_to_exclude=macroareas_to_exclude)[1]
     areas = sorted(list(G.nodes()), key=allen_order.index)
     degrees = [G.degree()[area] for area in areas]
 
@@ -232,7 +235,9 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y
         ax1.bar(x=areas, height=degrees)
 
         # Add color information
-        for idx, color in enumerate(get_colors(G, df_levels=df_levels, order=allen_order, sorting=True)[0]):
+        for idx, color in enumerate(get_colors(G, df_levels=df_levels, order=allen_order, sorting=True,
+                                               volumes=volumes,
+                                              macroareas_to_exclude=macroareas_to_exclude)[0]):
             ax1.patches[idx].set_color(color)
 
         ax1.set_ylabel("Degree")
