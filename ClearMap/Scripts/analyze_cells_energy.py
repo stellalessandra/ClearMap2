@@ -563,18 +563,14 @@ def select_significant_areas(dictionary, experimental_groups, batch,
     # Get unique areas from the list
     sig_areas_test = np.unique(list(itertools.chain.from_iterable(d)))
 
-    # Initialize a dictionary to store overlap
-    overlap = {'ncells':[], 'energy':[], 'density':[], 'relative_density':[]}
-
     # Find significant areas for PLS
-    for variable in overlap.keys():
-        overlap[variable] = set(upls.identify_pls_sig_areas(saliences=pd.read_csv(
-            './results_pls/'+ batch +'_'+ variable +'_saliences.csv'), 
+    significant_areas_PLS = upls.identify_pls_sig_areas(saliences=pd.read_csv(
+            './results_pls/'+ batch +'_'+ value_pls +'_saliences.csv'), 
                                                threshold=threshold_pls, 
-                                               volumes=clean_volumes_database()))
+                                               volumes=clean_volumes_database())
 
     # Get union of significant areas from the test and PLS
-    significant_areas = overlap[value_pls].union(list(sig_areas_test))
+    significant_areas = set(significant_areas_PLS).union(set(sig_areas_test))
 
     return significant_areas
 
