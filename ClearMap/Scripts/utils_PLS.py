@@ -7,6 +7,7 @@ import re
 import utils
 import itertools
 import seaborn as sns
+import utils
 
 def heatmap(file, limit, scale, mask, xsize, ysize, zsize, normalize):
     import numpy as np
@@ -208,7 +209,7 @@ def format_data_pls(dict_results, batch, table):
         # Add additional columns: subject, sex, and group
         temp.insert(loc=0, column='subject', value=mouse)
         temp.insert(loc=1, column='sex', value='F')  # Assuming all mice are female
-        temp.insert(loc=2, column='group', value=re.split(r'(\d+)', mouse)[-1])  # Extract group information
+        temp.insert(loc=2, column='group', value=utils._split_string(mouse)[-1])  # Extract group information
 
         # Reset the index and concatenate with existing data
         temp.reset_index(drop=True, inplace=True)
@@ -358,7 +359,7 @@ def plot_panel_contrasts(batch, variable, palette='tab10'):
     contrasts = pd.read_csv(f'./results_pls/{batch}_{variable}_contrasts.csv')
     
     # Rename columns for better readability
-    contrasts = contrasts.rename(columns={col: col.split('_')[1] for col in contrasts.columns if col.startswith('group_')})
+    contrasts = contrasts.rename(columns={col: col[6:] for col in contrasts.columns if col.startswith('group_')})
     
     # number of contrasts
     n_contrasts = contrasts.shape[0]
