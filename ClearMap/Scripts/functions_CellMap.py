@@ -62,7 +62,7 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         "verbose": False,
     }
     if align_to == 'cfos_auto':
-        resample_parameter_auto = {
+        resample_parameter_auto = { 
         "source_resolution" : (source_res[0], source_res[1], source_res[2]*2),
         "sink_resolution"   : (sink_res[0], sink_res[1], sink_res[2]),
         "processes" : 4,
@@ -70,7 +70,7 @@ def resampling(ws, source_res, sink_res, align_to, directory, rerun=False):
         }
     if rerun or not os.path.exists(directory + 'resampled.tif'):
         io.delete_file(ws.filename('resampled'))
-        res.resample(ws.filename('raw'), sink=ws.filename('resampled'),
+        res.resample(ws.filename('stitched'), sink=ws.filename('resampled'),
                      **resample_parameter)
         if align_to == 'cfos_auto':
             res.resample(ws.filename('autofluorescence'), 
@@ -410,8 +410,9 @@ def cell_alignment_and_annotation(ws, threshold_detection, orientation, align_to
 
 
 def export_csv(ws, threshold_detection):
+    # source = ws.source('cells', postfix=str(threshold_detection))
     source = ws.source('cells')
-    header = ', '.join([h[0] for h in source.dtype.names])
+    header = ', '.join([h[0] for h in source.dtype.names])+', l1, l2, l3'
     np.savetxt(ws.filename('cells', postfix=str(threshold_detection), extension='csv'), source[:], header=header,
                delimiter=',', fmt='%s')
 
