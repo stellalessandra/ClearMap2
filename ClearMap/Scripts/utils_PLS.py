@@ -221,7 +221,7 @@ def format_data_pls(dict_results, batch, table):
     return data
 
         
-def create_df_levels(volumes):
+def create_df_levels(volumes, level):
     """
     Creates a DataFrame containing information about brain areas and their corresponding parent areas.
 
@@ -235,11 +235,18 @@ def create_df_levels(volumes):
         volumes = pd.DataFrame(...)  # Load brain area data
         df_levels = create_df_levels(volumes)
     """
-    areas_level8 = list(zip(volumes.loc[volumes['st_level'] == 8]['acronym'].values,
-                            volumes.loc[volumes['st_level'] == 8]['id'].values))
+    
+    if level < 4:
+        raise ValueError('Level cannot be lower than 4 to remove macroareas at level 5')
+        
+    areas_levelx = list(zip(volumes.loc[volumes['st_level'] == level]['acronym'].values,
+                            volumes.loc[volumes['st_level'] == level]['id'].values))
+    if level == 7:
+        # removing Interpeduncular Fossa, which is not relevant 
+        areas_levelx.remove(('IPF', 624))
     
     # Remove areas with lowercase letters at level 8
-    areas_level8 = [area for area in areas_level8 if volumes[volumes['id'] == area[1]]['safe_name'].values[0][0].isupper()]
+    areas_levelx = [area for area in areas_levelx if volumes[volumes['id'] == area[1]]['safe_name'].values[0][0].isupper()]
 
     areas_level5 = list(zip(volumes.loc[volumes['st_level'] == 5]['acronym'].values,
                             volumes.loc[volumes['st_level'] == 5]['id'].values))
@@ -247,11 +254,11 @@ def create_df_levels(volumes):
 
     # Create a DataFrame to store area information
     df_levels = pd.DataFrame()
-    df_levels['area'] = [area[0] for area in areas_level8]
+    df_levels['area'] = [area[0] for area in areas_levelx]
     acronyms_level5 = []
     names_level5 = []
 
-    for area in areas_level8:
+    for area in areas_levelx:
         # Find the parent area ID at st_level 5
         # find set of parents
         # loop over depths and make a set of id

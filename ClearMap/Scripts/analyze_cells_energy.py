@@ -342,13 +342,16 @@ def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0,
           }
     df = pd.DataFrame(df)
 
-    # Remove lowercase areas
+    # Remove lowercase areas and 
     df = df[df.area.str[0].str.isupper()]
 
     # Remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
-    df_levels = upls.create_df_levels(vol)
-    list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
-    df = df[df['area'].isin(list_areas_to_keep)]
+    if level > 4:
+        df_levels = upls.create_df_levels(vol, level=level)
+        list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
+        df = df[df['area'].isin(list_areas_to_keep)]
+    else:
+        list_areas_to_keep = df['area'].to_array()
     
     # Loop over all areas at the specified level and calculate density and relative density
     total_volume = vol[vol['safe_name']=='root']['CCF_volume'].values[0]
@@ -575,7 +578,7 @@ def select_significant_areas(dictionary, experimental_groups, batch,
     return significant_areas
 
 
-def create_dfs_across_groups(dictionary_results, experimental_groups, value, area=None):
+def create_dfs_across_groups(dictionary_results, experimental_groups, value, area=None, level=8):
     """
     This function creates a dictionary of pandas DataFrames for each experimental group.
 
@@ -586,6 +589,7 @@ def create_dfs_across_groups(dictionary_results, experimental_groups, value, are
     value (str): The value to be calculated across groups.
     area (str, optional): The specific area to be considered. If None, the function will 
     sum the values across all areas.
+    level (int): level of the Allen Brain atlas to consider
 
     Returns:
     dict: A dictionary where the keys are the names of the experimental groups and the 
@@ -619,7 +623,7 @@ def create_dfs_across_groups(dictionary_results, experimental_groups, value, are
 
 
 
-def kruskal_per_area(dictionary, value, experimental_groups):
+def kruskal_per_area(dictionary, value, experimental_groups, level):
     """
     Performs a Kruskal-Wallis H-test on a given dictionary of dataframes for each area.
 
@@ -638,10 +642,13 @@ def kruskal_per_area(dictionary, value, experimental_groups):
     subjects = list(dictionary.keys())
 
     # Create a dataframe of levels from the cleaned volumes database
-    df_levels = upls.create_df_levels(clean_volumes_database())
+    df_levels = upls.create_df_levels(clean_volumes_database(), level=level)
 
     # Filter out certain areas and convert the remaining areas to a numpy array
-    areas = df_levels[~df_levels['parent_l5'].isin(['P','MY','CBX', 'CBN'])]['name_area'].to_numpy()
+    if level > 4:
+        areas = df_levels[~df_levels['parent_l5'].isin(['P','MY','CBX', 'CBN'])]['name_area'].to_numpy()
+    else:
+        areas = df['area'].to_array()
 
     # Initialize an empty dictionary to store significant areas
     significant_areas = {}
@@ -650,8 +657,9 @@ def kruskal_per_area(dictionary, value, experimental_groups):
     for area in areas:
         # Create dataframes for the results dictionary, experimental groups, value, and area
         dfs = create_dfs_across_groups(dictionary_results=dictionary, 
-                experimental_groups=experimental_groups, 
-                value=value, area=area)
+                                       experimental_groups=experimental_groups, 
+                                       value=value, area=area,
+                                       level=level)
 
         # Calculate the total sum of the value column for each key in the dataframes
         tot_sum = 0
