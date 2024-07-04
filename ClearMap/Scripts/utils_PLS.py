@@ -9,6 +9,10 @@ import itertools
 import seaborn as sns
 import utils
 
+#################################################################
+# Core utility functions of PLS developed by Ludovico Silvestri
+#################################################################
+
 def heatmap(file, limit, scale, mask, xsize, ysize, zsize, normalize):
     import numpy as np
     import pandas as pd
@@ -106,7 +110,9 @@ def bootstrap_test(x, y, v0, u0, n, proc):
     vs = np.std(vdist, axis=0)
     return vs
 
-################################################ utils functions defined by AS
+################################################
+# Utility Functions written and defined by AS
+################################################
 
 def reformat_dict_acronym(dict_results, volumes):
     """
