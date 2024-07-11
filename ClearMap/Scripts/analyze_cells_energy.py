@@ -11,24 +11,43 @@ import scikit_posthocs as sp
 
 
 def list_subjects(root_directory):
+    """
+    Lists all subject directories within a specified experiment and experimental group.
+
+    This function reads configuration details from a YAML file to determine the 
+    experiment and experimental group. It then constructs the data directory path 
+    and lists all subject directories within that path.
+
+    Parameters:
+    root_directory (str): The root directory where experiment data is stored.
+
+    Returns:
+    list: A list of subject directory names.
+    """
+    # Attempt to read the configuration file from the ClearMap/Scripts directory
     try:
         with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader)
     except:
+        # Fallback to reading the configuration file from the current directory
         with open("configfile.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader)
     
+    # Extract user, experiment, and experimental group details from the config file
     user = config['user']
     experiment = config['experiment']
     experimental_group = config['experimental_group']
     
-    data_directory = root_directory + experiment + '/' \
-                + experimental_group + '/'
+    # Construct the data directory path
+    data_directory = os.path.join(root_directory, experiment, experimental_group)
                 
-    subjects = [name for name in os.listdir(data_directory) \
+    # List all subject directories within the constructed data directory path
+    subjects = [name for name in os.listdir(data_directory) 
                 if os.path.isdir(os.path.join(data_directory, name))]
     
     return subjects
+
+
 
 def clean_volumes_database():
     """
@@ -623,7 +642,7 @@ def create_dfs_across_groups(dictionary_results, experimental_groups, value, are
 
 
 
-def kruskal_per_area(dictionary, value, experimental_groups, level):
+def kruskal_per_area(dictionary, value, experimental_groups, level, save_all_areas=False):
     """
     Performs a Kruskal-Wallis H-test on a given dictionary of dataframes for each area.
 
@@ -631,6 +650,7 @@ def kruskal_per_area(dictionary, value, experimental_groups, level):
     dictionary (dict): A dictionary where keys are subjects and values are pandas dataframes.
     value (str): The column name in the dataframe to perform the test on.
     experimental_groups (list): A list of experimental groups.
+    save_all_areas (flag): Binary flag enabling the saving of kruskal results of all areas.
 
     Returns:
     dict: A dictionary where keys are areas and values are tuples. 
@@ -668,8 +688,14 @@ def kruskal_per_area(dictionary, value, experimental_groups, level):
 
         # If the total sum is not zero, perform a Kruskal-Wallis H-test
         if tot_sum != 0:
+            # if save_all_areas is true always save the KS result
+            if save_all_areas:
+                significant_areas[area] = \
+                    (kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()]), 
+                     sp.posthoc_dunn(pd.concat(dfs, ignore_index=True), val_col=value, 
+                group_col='group', p_adjust = 'fdr_bh'))
             # If the p-value of the test is less than 0.05, add the area to the significant_areas dictionary
-            if kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()])[1] < 0.05:
+            elif kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()])[1] < 0.05:
                 significant_areas[area] = \
                     (kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()]), 
                      sp.posthoc_dunn(pd.concat(dfs, ignore_index=True), val_col=value, 
