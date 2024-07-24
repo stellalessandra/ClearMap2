@@ -63,7 +63,7 @@ def clean_volumes_database():
     query = pd.read_csv("query.csv")
     
     # Read the table data from an Excel file
-    table_s4 = pd.read_excel('table_S4_wang2020.xlsx', header=1)
+    table_s4 = pd.read_excel('table_S4_wang2020.xlsx', header=1, engine='openpyxl')
     
     # Concatenate the 'structure ID' and 'CCF Volume' columns from the table
     temp = pd.concat([table_s4['structure ID'], table_s4['CCF Volume']], axis=1)
