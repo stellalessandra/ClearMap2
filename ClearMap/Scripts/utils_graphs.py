@@ -197,7 +197,7 @@ def fig_graph_degrees(G, title, volumes, show_colorbar=True, show_legend=True, y
     """
     # Create necessary tables
     allen_order = list(volumes[volumes['st_level'] == 8]['acronym'])
-    df_levels = upls.create_df_levels(volumes)
+    df_levels = upls.create_df_levels(volumes, level=8)
 
     # Create the figure
     fig = plt.figure(figsize=figsize)

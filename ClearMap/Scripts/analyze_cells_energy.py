@@ -11,24 +11,43 @@ import scikit_posthocs as sp
 
 
 def list_subjects(root_directory):
+    """
+    Lists all subject directories within a specified experiment and experimental group.
+
+    This function reads configuration details from a YAML file to determine the 
+    experiment and experimental group. It then constructs the data directory path 
+    and lists all subject directories within that path.
+
+    Parameters:
+    root_directory (str): The root directory where experiment data is stored.
+
+    Returns:
+    list: A list of subject directory names.
+    """
+    # Attempt to read the configuration file from the ClearMap/Scripts directory
     try:
         with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader)
     except:
+        # Fallback to reading the configuration file from the current directory
         with open("configfile.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader)
     
+    # Extract user, experiment, and experimental group details from the config file
     user = config['user']
     experiment = config['experiment']
     experimental_group = config['experimental_group']
     
-    data_directory = root_directory + experiment + '/' \
-                + experimental_group + '/'
+    # Construct the data directory path
+    data_directory = os.path.join(root_directory, experiment, experimental_group)
                 
-    subjects = [name for name in os.listdir(data_directory) \
+    # List all subject directories within the constructed data directory path
+    subjects = [name for name in os.listdir(data_directory) 
                 if os.path.isdir(os.path.join(data_directory, name))]
     
     return subjects
+
+
 
 def clean_volumes_database():
     """
@@ -44,7 +63,7 @@ def clean_volumes_database():
     query = pd.read_csv("query.csv")
     
     # Read the table data from an Excel file
-    table_s4 = pd.read_excel('table_S4_wang2020.xlsx', header=1)
+    table_s4 = pd.read_excel('table_S4_wang2020.xlsx', header=1, engine='openpyxl')
     
     # Concatenate the 'structure ID' and 'CCF Volume' columns from the table
     temp = pd.concat([table_s4['structure ID'], table_s4['CCF Volume']], axis=1)
@@ -342,13 +361,16 @@ def calculate_cells_energy_per_level(df_mouse, vol, level, source=0, size=0,
           }
     df = pd.DataFrame(df)
 
-    # Remove lowercase areas
+    # Remove lowercase areas and 
     df = df[df.area.str[0].str.isupper()]
 
     # Remove areas that are in macroareas 'Pons', 'Medulla', 'Cerebellar cortex', 'Cerebellar nuclei'
-    df_levels = upls.create_df_levels(vol)
-    list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
-    df = df[df['area'].isin(list_areas_to_keep)]
+    if level > 4:
+        df_levels = upls.create_df_levels(vol, level=level)
+        list_areas_to_keep = df_levels[~df_levels['name_parent_l5'].isin(macroareas_to_remove)]['name_area'].values
+        df = df[df['area'].isin(list_areas_to_keep)]
+    else:
+        list_areas_to_keep = df['area'].to_array()
     
     # Loop over all areas at the specified level and calculate density and relative density
     total_volume = vol[vol['safe_name']=='root']['CCF_volume'].values[0]
@@ -575,7 +597,7 @@ def select_significant_areas(dictionary, experimental_groups, batch,
     return significant_areas
 
 
-def create_dfs_across_groups(dictionary_results, experimental_groups, value, area=None):
+def create_dfs_across_groups(dictionary_results, experimental_groups, value, area=None, level=8):
     """
     This function creates a dictionary of pandas DataFrames for each experimental group.
 
@@ -586,6 +608,7 @@ def create_dfs_across_groups(dictionary_results, experimental_groups, value, are
     value (str): The value to be calculated across groups.
     area (str, optional): The specific area to be considered. If None, the function will 
     sum the values across all areas.
+    level (int): level of the Allen Brain atlas to consider
 
     Returns:
     dict: A dictionary where the keys are the names of the experimental groups and the 
@@ -619,7 +642,7 @@ def create_dfs_across_groups(dictionary_results, experimental_groups, value, are
 
 
 
-def kruskal_per_area(dictionary, value, experimental_groups):
+def kruskal_per_area(dictionary, value, experimental_groups, level, save_all_areas=False):
     """
     Performs a Kruskal-Wallis H-test on a given dictionary of dataframes for each area.
 
@@ -627,6 +650,7 @@ def kruskal_per_area(dictionary, value, experimental_groups):
     dictionary (dict): A dictionary where keys are subjects and values are pandas dataframes.
     value (str): The column name in the dataframe to perform the test on.
     experimental_groups (list): A list of experimental groups.
+    save_all_areas (flag): Binary flag enabling the saving of kruskal results of all areas.
 
     Returns:
     dict: A dictionary where keys are areas and values are tuples. 
@@ -638,10 +662,13 @@ def kruskal_per_area(dictionary, value, experimental_groups):
     subjects = list(dictionary.keys())
 
     # Create a dataframe of levels from the cleaned volumes database
-    df_levels = upls.create_df_levels(clean_volumes_database())
+    df_levels = upls.create_df_levels(clean_volumes_database(), level=level)
 
     # Filter out certain areas and convert the remaining areas to a numpy array
-    areas = df_levels[~df_levels['parent_l5'].isin(['P','MY','CBX', 'CBN'])]['name_area'].to_numpy()
+    if level > 4:
+        areas = df_levels[~df_levels['parent_l5'].isin(['P','MY','CBX', 'CBN'])]['name_area'].to_numpy()
+    else:
+        areas = df['area'].to_array()
 
     # Initialize an empty dictionary to store significant areas
     significant_areas = {}
@@ -650,8 +677,9 @@ def kruskal_per_area(dictionary, value, experimental_groups):
     for area in areas:
         # Create dataframes for the results dictionary, experimental groups, value, and area
         dfs = create_dfs_across_groups(dictionary_results=dictionary, 
-                experimental_groups=experimental_groups, 
-                value=value, area=area)
+                                       experimental_groups=experimental_groups, 
+                                       value=value, area=area,
+                                       level=level)
 
         # Calculate the total sum of the value column for each key in the dataframes
         tot_sum = 0
@@ -660,8 +688,14 @@ def kruskal_per_area(dictionary, value, experimental_groups):
 
         # If the total sum is not zero, perform a Kruskal-Wallis H-test
         if tot_sum != 0:
+            # if save_all_areas is true always save the KS result
+            if save_all_areas:
+                significant_areas[area] = \
+                    (kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()]), 
+                     sp.posthoc_dunn(pd.concat(dfs, ignore_index=True), val_col=value, 
+                group_col='group', p_adjust = 'fdr_bh'))
             # If the p-value of the test is less than 0.05, add the area to the significant_areas dictionary
-            if kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()])[1] < 0.05:
+            elif kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()])[1] < 0.05:
                 significant_areas[area] = \
                     (kruskal(*[dfs[key][value].to_numpy() for key in dfs.keys()]), 
                      sp.posthoc_dunn(pd.concat(dfs, ignore_index=True), val_col=value, 

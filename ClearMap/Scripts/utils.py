@@ -91,4 +91,32 @@ def divide_in_exp_groups(list_subjects, group_labels = ['Control', 'Fam', 'Unfam
                 experimental_groups[exp_group].append(subject)
     
     return experimental_groups
+
+    
+def split_density_maps(path):
+    """
+    Split an image in half vertically and process it for the right hemisphere.
+
+    This function loads a TIFF image, cuts it in half vertically keeping the second half,
+    swaps the x and z axes, inverts the x-axis, and saves the resulting image.
+
+    Parameters:
+    path (str): The directory path where the 'density_counts.tif' image is located and where
+                the processed image 'density_counts_right_hemisphere.tif' will be saved.
+    """
+    # Load the image from the specified path
+    image = imread(path + 'density_counts.tif')
+
+    # Define the index to split the image vertically and keep the second half
+    half_index = 201
+    image = image[:, :, half_index:]
+
+    # Swap the x and z axes of the image
+    image = np.swapaxes(image, 0, 2)
+
+    # Invert the x-axis
+    image = image[::-1, :, :]
+
+    # Save the processed image to the specified path
+    imsave(path + 'density_counts_right_hemisphere.tif', image)
      
