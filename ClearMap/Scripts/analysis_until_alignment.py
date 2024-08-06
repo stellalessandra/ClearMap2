@@ -65,7 +65,7 @@ if user == 'szucca/Ilaria':
             + experimental_group + '/'+ subject + '/'
 else:
     sys.path.append('/data01/' + user)
-    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+    data_directory = '/data01/' + user + '/'+ experiment + '/' \
                 + experimental_group + '/'+ subject + '/'
             
             
@@ -80,8 +80,8 @@ for folder in ['elastix_auto_to_reference',
         
         
 # Workspace initialization
-#expression_raw = 'cFos/stitched_fused_tp_0_ch_0.tif'
-expression_raw = 'cFos/Z<Z,4> .tif'
+expression_raw = 'cFos/stitched_fused_tp_0_ch_0.tif'
+# expression_raw = 'cFos/Z<Z,4> .tif'
 expression_auto = 'Auto/Z<Z,4> .tif'
 
 ws = wsp.Workspace('CellMap', directory=data_directory)
@@ -96,18 +96,25 @@ ws.debug = False
 resources_directory = settings.resources_path
 
 
-## convertion of data to numpy
-convert_data_to_numpy(ws=ws, directory=data_directory, rerun=rerun)
+# convertion of data to numpy
+convert_data_to_numpy(ws=ws, 
+                      directory=data_directory, rerun=rerun)
 
 
 ## resampling of autofluorescence
-resampling(ws=ws, source_res=source_res, sink_res=sink_res,
-        align_to=align_to, directory=data_directory)
+resampling(ws=ws, 
+           source_res=source_res, 
+           sink_res=sink_res,
+           align_to=align_to, 
+           directory=data_directory)
 
 
 ## alignment of resampled to autofluorescence and to reference
-alignment(ws=ws, alignment_files_directory=resources_directory, 
-          align_to=align_to, orientation=orientation,
-          directory=data_directory, slicing=slicing,
+alignment(ws=ws, 
+          alignment_files_directory=resources_directory, 
+          align_to=align_to, 
+          orientation=orientation,
+          directory=data_directory, 
+          slicing=slicing,
           rerun=rerun)
 
