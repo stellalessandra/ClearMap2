@@ -186,9 +186,9 @@ def initialization_alignment(alignment_files_directory, orientation, slicing):
     # Optionally use a different bspline file
     # align_reference_bspline_file = io.join(directory, 'Alignment/align_bsplineTest.txt')
 
-    return annotation_file, reference_file, distance_file, 
-            align_channels_affine_file, align_reference_affine_file, 
-            align_reference_bspline_file
+    return annotation_file, reference_file, distance_file, \
+        align_channels_affine_file, align_reference_affine_file, \
+        align_reference_bspline_file
 
 
 def alignment_resampled_to_autofluorescence(ws, align_channels_affine_file, directory, rerun):
@@ -497,15 +497,23 @@ def cell_detection(ws, slicing, shape, threshold_detection, debugging=True):
 
     # Configure processing parameters
     processing_parameter = cells.default_cell_detection_processing_parameter.copy()
+#    processing_parameter.update(
+#        processes=6,  # 'serial',6
+#        size_max=20,  # 100, #35,20
+#        size_min=11,  # 30, #30,11
+#        overlap=10,  # 32, #10,
+#        verbose=False
+#    )
     processing_parameter.update(
-        processes=6,
-        size_max=20,
-        size_min=11,
-        overlap=10,
-        verbose=False
-    )
+    processes=12,  # 'serial',6
+    size_max=6,  # 100, #35,20
+    size_min=3,  # 30, #30,11
+    overlap=2,  # 32, #10,
+    verbose=False
+)
 
-    # Perform cell detection
+
+    # doing cell detection
     if debugging:
         # Create test data for debugging
         create_test_data(ws=ws, slicing=slicing)
@@ -742,17 +750,9 @@ def export_csv(ws, threshold_detection):
     
     # Retrieve cell data from workspace
     source = ws.source('cells')
-    
-    # Create header for CSV file
-    header = ', '.join([h[0] for h in source.dtype.names]) + ', l1, l2, l3'
-    
-    # Save data to CSV file
-    np.savetxt(ws.filename('cells', postfix=str(threshold_detection), extension='csv'),  # Filename for CSV
-               source[:],  # Data to be saved
-               header=header,  # Header for CSV file
-               delimiter=',',  # Delimiter used in CSV
-               fmt='%s')  # Format for saving data
-
+    header = ', '.join([h[0] for h in source.dtype.names])+',l1,l2,l3'
+    np.savetxt(ws.filename('cells', postfix=str(threshold_detection), extension='csv'), source[:], header=header,
+               delimiter=',', fmt='%s')
 
 
 def export_clearmap1(ws):

@@ -70,26 +70,19 @@ if user == 'szucca/Ilaria':
             + experimental_group + '/'+ subject + '/'
 else:
     sys.path.append('/data01/' + user)
-    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
+    data_directory = '/data01/' + user + '/' + experiment + '/' \
                 + experimental_group + '/'+ subject + '/'
             
-            
-# make directories needed for project
-if not os.path.exists(data_directory):
-    os.makedirs(data_directory)
-for folder in ['elastix_auto_to_reference', 
-               'elastix_resampled_to_auto', 
-               'elastix_resampled_to_reference']:
-    if not os.path.exists(data_directory+folder):
-        os.makedirs(data_directory+folder)
-        
-        
+
 # Workspace initialization
-expression_raw = 'cFos/Z<Z,4> .tif'
+expression_raw = 'cFos/stitched_fused_tp_0_ch_0.tif'
+# expression_raw = 'cFos/Z<Z,4> .tif'
 expression_auto = 'Auto/Z<Z,4> .tif'
 
-ws = wsp.Workspace('CellMap', directory=data_directory)
-ws.update(raw=expression_raw, autofluorescence=expression_auto)
+ws = wsp.Workspace('CellMap', 
+                   directory=data_directory)
+ws.update(raw=expression_raw, 
+          autofluorescence=expression_auto)
 ws.info()
 ws.debug = False
 
@@ -99,48 +92,38 @@ ws.debug = False
 # creation resources directory
 resources_directory = settings.resources_path
 
-#
-### alignment of resampled to autofluorescence and to reference
-#alignment(ws=ws, alignment_files_directory=resources_directory, 
-#         align_to=align_to, orientation=orientation,
-#         directory=data_directory, slicing=slicing, rerun=rerun)
-#
-#
-# Cell detection
+ # Cell detection
 cell_detection(ws=ws, slicing=slicing, shape=shape_param, 
-               threshold_detection=shape_detection_threshold, 
-               debugging=debug_detection)
+                 threshold_detection=shape_detection_threshold, 
+                 debugging=debug_detection)
 
 # Cell filtering
-cell_filtering(ws=ws, 
-               thresholds_filtering=thresholds_filt, 
+cell_filtering(ws=ws,
+               thresholds_filtering=thresholds_filt,
                threshold_detection=shape_detection_threshold,
                debugging=debug_detection)
 
-
-
-# Visualization cell statistics
-visualization_cell_statistics(ws=ws, 
-     threshold_detection=shape_detection_threshold,
-     directory=resources_directory)
-
-
-
-# Alignment and annotation of detected and filtered results
+ # Alignment and annotation of detected and filtered results
 cell_alignment_and_annotation(ws=ws, 
-    threshold_detection=shape_detection_threshold,
-    orientation=orientation, slicing=slicing,
-    align_to=align_to)
+                              threshold_detection=shape_detection_threshold,
+                              orientation=orientation, slicing=slicing,
+                              align_to=align_to)
 
 
-# exports of results
-export_csv(ws=ws, threshold_detection=shape_detection_threshold)
+  # exports of results
+export_csv(ws=ws, 
+           threshold_detection=shape_detection_threshold)
 export_clearmap1(ws=ws)
-export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
-             directory=data_directory)
+export_matlab(ws=ws, 
+              threshold_detection=shape_detection_threshold,
+              directory=data_directory)
 
 
 # voxelization
-voxelization(ws=ws, orientation=orientation, method=method, 
-             radius=radius, slicing=slicing)
+voxelization(ws=ws, 
+             orientation=orientation, 
+             method=method, 
+             radius=radius,
+             slicing=slicing)
+
 np.save(data_directory+'params', config)

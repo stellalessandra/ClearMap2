@@ -43,11 +43,11 @@ def list_subjects():
     """
     # Try to open the configuration file in the specified directory
     try:
-        with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
+        with open("ClearMap/Scripts/configfile_ila.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader)
     # If the file is not found in the specified directory, look for it in the current directory
     except FileNotFoundError:
-        with open("configfile.yaml", 'r') as stream:
+        with open("configfile_ila.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader) 
     
     # Extract user, experiment, and experimental group information from the configuration file

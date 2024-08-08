@@ -34,7 +34,6 @@ slice_x = config['slice_x']
 slice_y = config['slice_y']
 slice_z = config['slice_z']
 shape_param = config['shape_param']
-shape_detection_threshold = config['shape_detection_threshold']
 source = config['source']
 size = config['size']
 method = config['method']
@@ -50,18 +49,23 @@ thresholds_filt = {
     'size': size
 }
 
+# parsing subject and threshold
+parser = argparse.ArgumentParser()
+parser.add_argument('subject', 
+                    metavar='subject', 
+                    type=str,
+                    help='mouse which is analyzed in batch file')
 
-if type(config['subjects']) == str:
-    subject = config['subjects']
-    print('Running analysis only on one subject')
-elif type(config['subjects']) == list:
-    parser = argparse.ArgumentParser(description='subject')
-    parser.add_argument('subject', metavar='subject', type=str,
-    help='mouse which is analyzed in batch file')
-    args = parser.parse_args()
-    subject = args.subject
-else:
-    raise TypeError('Wrong input subject parameter')
+parser.add_argument('shape_detection_threshold', 
+                    metavar='shape_detection_threshold', 
+                    type=int,
+                    help='threshold which is analyzed in batch file')
+args = parser.parse_args()
+subject = args.subject
+shape_detection_threshold = args.shape_detection_threshold
+shape_detection_threshold = int(args.shape_detection_threshold)
+
+print('subject and threshold', subject, shape_detection_threshold)
 
 
 if user == 'szucca/Ilaria':
@@ -70,7 +74,7 @@ if user == 'szucca/Ilaria':
             + experimental_group + '/'+ subject + '/'
 else:
     sys.path.append('/data01/' + user)
-    data_directory = '/data01/' + user + '/'+ experiment + '/' \
+    data_directory = '/data01/' + user + '/' + experiment + '/' \
                 + experimental_group + '/'+ subject + '/'
             
             
@@ -101,29 +105,6 @@ ws.debug = False
 resources_directory = settings.resources_path
 
 
-# convertion of data to numpy
-convert_data_to_numpy(ws=ws, 
-                      directory=data_directory, 
-                      rerun=rerun)
-
-
-# resampling of autofluorescence
-resampling(ws=ws, 
-           source_res=source_res, 
-           sink_res=sink_res,
-           align_to=align_to, 
-           directory=data_directory)
-
-
-# alignment of resampled to autofluorescence and to reference
-alignment(ws=ws, 
-          alignment_files_directory=resources_directory, 
-          align_to=align_to, 
-          orientation=orientation,
-          directory=data_directory, 
-          slicing=slicing,rerun=rerun)
-
-
 # Cell detection
 cell_detection(ws=ws, 
                slicing=slicing, 
@@ -131,31 +112,21 @@ cell_detection(ws=ws,
                threshold_detection=shape_detection_threshold, 
                debugging=debug_detection)
 
-
 # Cell filtering
 cell_filtering(ws=ws, 
-               slicing=slicing, 
-               shape=shape_param, 
                thresholds_filtering=thresholds_filt, 
                threshold_detection=shape_detection_threshold,
                debugging=debug_detection)
 
 
 # Alignment and annotation of detected and filtered results
-cell_alignment_and_annotation(ws=ws,
+cell_alignment_and_annotation(ws=ws, 
                               threshold_detection=shape_detection_threshold,
                               orientation=orientation, 
-                              align_to=align_to, 
-                              slicing=slicing)
+                              slicing=slicing,
+                              align_to=align_to)
+
 
 # exports of results
-export_csv(ws=ws)
-export_matlab(ws=ws, threshold_detection=shape_detection_threshold,
-              directory=data_directory)
+export_csv(ws=ws, threshold_detection=shape_detection_threshold)
 
-
-# voxelization
-voxelization(ws=ws, orientation=orientation, method=method, radius=radius,
-             slicing=slicing)
-
-np.save(data_directory+'params', config)
