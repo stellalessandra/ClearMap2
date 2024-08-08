@@ -38,9 +38,9 @@ def main():
                         help="input csv file", metavar='PATH')
     parser.add_argument('-o', '--output', 
                         help="output base path", metavar='PATH')
-    parser.add.argument('-b', '--bootstrap', 
+    parser.add_argument('-b', '--bootstrap', 
                         help="number of bootstrap iterations", type=int, default=5000)
-    parser.add.argument('-p', '--procrustes', 
+    parser.add_argument('-p', '--procrustes', 
                         help="enable Procrustes rotation in bootstrap", action='store_true', default=False)
     parser.add_argument('-c', '--columns', 
                         help="number of descriptor columns", type=int, default=2)

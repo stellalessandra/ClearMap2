@@ -49,7 +49,9 @@ def create_graph(corr_matrix, volumes, significant_areas=0, corr_threshold=0.85,
         df_graph = df_graph.loc[df_graph['area1'].isin(significant_areas)]
         df_graph = df_graph.loc[df_graph['area2'].isin(significant_areas)]
     else:
-        areas = np.unique(df_graph['area1'].values)
+        significant_areas = corr_matrix.columns.to_list()
+        significant_areas = [volumes.loc[volumes['acronym'] == area]['safe_name'].values[0]\
+                     for area in significant_areas]
         
     # Filter the correlations based on the corr_threshold and correlations parameters
     if correlations=='both':

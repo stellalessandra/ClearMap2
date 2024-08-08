@@ -538,7 +538,7 @@ def select_areas(df, threshold=0.05, groups=['Control', 'Fam', 'Unfam']):
 def select_significant_areas(dictionary, experimental_groups, batch,  
                              test='mannwhitneyu', threshold_test=0.05,
                              threshold_pls=2.56,
-                            value_test='n_cells', value_pls='relative_density'):
+                            value_test='n_cells', value_pls='relative_density', pls=True):
     """
     This function selects significant areas based on a given threshold and test.
 
@@ -551,6 +551,7 @@ def select_significant_areas(dictionary, experimental_groups, batch,
     threshold_pls (float): The threshold for the PLS. Default is 2.56.
     value_test (str): The value for the test. Default is 'n_cells'.
     value_pls (str): The value for the PLS. Default is 'relative_density'.
+    pls (bin): Flag to include the PLS results.
 
     Returns:
     significant_areas (set): A set of significant areas.
@@ -585,14 +586,17 @@ def select_significant_areas(dictionary, experimental_groups, batch,
     # Get unique areas from the list
     sig_areas_test = np.unique(list(itertools.chain.from_iterable(d)))
 
-    # Find significant areas for PLS
-    significant_areas_PLS = upls.identify_pls_sig_areas(saliences=pd.read_csv(
-            './results_pls/'+ batch +'_'+ value_pls +'_saliences.csv'), 
-                                               threshold=threshold_pls, 
-                                               volumes=clean_volumes_database())
+    if pls:
+        # Find significant areas for PLS
+        significant_areas_PLS = upls.identify_pls_sig_areas(saliences=pd.read_csv(
+                './results_pls/'+ batch +'_'+ value_pls +'_saliences.csv'), 
+                                                   threshold=threshold_pls, 
+                                                   volumes=clean_volumes_database())
 
-    # Get union of significant areas from the test and PLS
-    significant_areas = set(significant_areas_PLS).union(set(sig_areas_test))
+        # Get union of significant areas from the test and PLS
+        significant_areas = set(significant_areas_PLS).union(set(sig_areas_test))
+    else:
+        significant_areas = sig_areas_test
 
     return significant_areas
 
@@ -702,4 +706,3 @@ def kruskal_per_area(dictionary, value, experimental_groups, level, save_all_are
                 group_col='group', p_adjust = 'fdr_bh'))
 
     return significant_areas
-    
