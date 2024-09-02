@@ -13,11 +13,7 @@ import itertools
 with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
   config = yaml.load(stream, Loader=Loader)
 
-user = config['user']
-experiment = 'SexualImprinting'
-experimental_group = 'BL_wf_USV_Bedding_wb'
-directory = '/data01/' + user + experiment + '/' \
-          + experimental_group + '/'
+directory = config['data_directory']
 subjects = [name for name in os.listdir(directory) \
               if os.path.isdir(os.path.join(directory, name))]
 print(subjects)

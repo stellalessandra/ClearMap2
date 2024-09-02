@@ -50,14 +50,8 @@ def list_subjects():
         with open("configfile_ila.yaml", 'r') as stream:
             config = yaml.load(stream, Loader=Loader) 
     
-    # Extract user, experiment, and experimental group information from the configuration file
-    user = config['user']
-    experiment = config['experiment']
-    experimental_group = config['experimental_group']
-    
-    # Construct the data directory path
-    data_directory = '/data01/' + user + '/Projects/' + experiment + '/' \
-                + experimental_group + '/'
+    # Extract the data directory path from the configfile
+    data_directory = config['data_directory']
                 
     # Get a list of all directories (subjects) in the data directory
     subjects = [name for name in os.listdir(data_directory) \

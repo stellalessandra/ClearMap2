@@ -24,9 +24,7 @@ times = []
 with open("ClearMap/Scripts/configfile.yaml", 'r') as stream:
     config = yaml.load(stream, Loader=Loader)
 
-user = config['user']
-experiment = config['experiment']
-experimental_group = config['experimental_group']
+data_directory = config['data_directory']
 source_res = config['source_res']
 sink_res = config['sink_res']
 orientation = tuple(config['orientation'])
@@ -63,15 +61,8 @@ elif type(config['subjects']) == list:
 else:
     raise TypeError('Wrong input subject parameter')
 
-
-if user == 'szucca/Ilaria':
-    sys.path.append('/data/szucca/Ilaria')
-    data_directory = '/data/szucca/Ilaria/Projects/' + experiment + '/' \
-            + experimental_group + '/'+ subject + '/'
-else:
-    sys.path.append('/data01/' + user)
-    data_directory = '/data01/' + user + '/'+ experiment + '/' \
-                + experimental_group + '/'+ subject + '/'
+# include subject in the data directory
+data_directory = data_directory + subject + '/'   
             
             
 # make directories needed for project

@@ -1,12 +1,5 @@
-# User
-user : 'astella'
-
-# Experiment
-experiment : 'SexualImprinting'
-
-# Experimental group
-#experimental_group : 'WILD_with_father'
-experimental_group : 'BL_wf_USV_Bedding_wb'
+# Results path
+data_directory : '/data01/astella/SexualImprintin/BL_wf_USV_Bedding_wb/'
 
 # mouse: use only when doing a batch analysis. Otherwise run the analysis 
 # script with subject string (ex. python analysis_CellMap.py 'F1Control')

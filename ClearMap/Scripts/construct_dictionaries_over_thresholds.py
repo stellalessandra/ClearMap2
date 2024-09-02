@@ -13,11 +13,7 @@ from scipy.stats import ttest_ind, mannwhitneyu
 import networkx as nx
 import matplotlib.pyplot as plt
 
-root_directory = '/home/stella/Documents/Torino/projects/'
-experiment = 'SexualImprinting'
-experimental_group = 'Black_wf_WholeBrain'
-data_directory = root_directory + experiment + '/' \
-                + experimental_group + '/'
+data_directory = '/home/stella/Documents/Torino/projects/SexualImprinting/Black_wf_WholeBrain'
 subjects = [name for name in os.listdir(data_directory) \
             if os.path.isdir(os.path.join(data_directory, name))]
 
