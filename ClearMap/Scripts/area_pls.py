@@ -2,8 +2,50 @@
 import yaml
 
 ##################################################################
-# Core Area PLS developed originally by Ludovico Silvestri
-# Documentation by AS
+# PLS Analysis and Bootstrap Testing Script
+
+# This Python script performs Partial Least Squares (PLS) analysis and bootstrap testing on experimental data provided in CSV format. It processes input data, conducts statistical analysis, and saves the results to specified output files.
+
+# ## Overview
+
+# The script is designed to:
+# - Read data from a CSV file.
+# - Perform Partial Least Squares (PLS) analysis to identify relationships between input variables (X) and response variables (Y).
+# - Conduct bootstrap testing to assess the stability and reliability of the PLS results.
+# - Optionally apply Procrustes rotation during bootstrap iterations to refine the analysis.
+# - Output the saliences and contrasts resulting from the PLS analysis as CSV files.
+
+# ## Key Features
+
+# - **Command-line Interface**: Uses command-line arguments to specify input files, output paths, and analysis parameters.
+# - **Data Preprocessing**: Automatically handles index columns and creates dummy matrices for categorical data such as experimental groups.
+# - **PLS Analysis**: Decomposes the relationship between input data (X) and output data (Y) using PLS to generate matrices describing these relationships.
+# - **Bootstrap Testing**: Repeats the analysis over multiple iterations to test the stability of the results. Procrustes rotation can be applied during this process.
+# - **Results Export**: Outputs saliences and contrasts to CSV files for further analysis.
+
+# ## Parameters
+
+# The script accepts the following command-line arguments:
+
+# - `-i`, `--input`: Path to the input CSV file containing the data.
+# - `-o`, `--output`: Base path for the output files. Results will be saved with this prefix.
+# - `-b`, `--bootstrap`: Number of bootstrap iterations (default is 5000).
+# - `-p`, `--procrustes`: Enables Procrustes rotation during bootstrap testing (optional, default is False).
+# - `-c`, `--columns`: Number of descriptor columns to use in the PLS analysis (default is 2).
+
+# ## Workflow
+
+# 1. **Input Data**: Reads a CSV file containing experimental data, assuming one column contains group labels and others contain descriptors or measurements.
+# 2. **Data Processing**: Converts categorical group data into a dummy matrix using one-hot encoding and selects appropriate columns for PLS analysis.
+# 3. **PLS Analysis**: Applies the PLS method to identify relationships between the independent variables (X) and dependent variables (Y), generating matrices `U`, `S`, and `V`.
+# 4. **Bootstrap Testing**: Conducts a bootstrap analysis with multiple iterations (default 5000) to test the stability of the `V` matrix from PLS. Optionally applies Procrustes rotation.
+# 5. **Result Export**: Outputs salience values and contrasts to CSV files for further inspection.
+
+# ## Example Usage
+
+# ```bash
+# python3 script.py -i data/input.csv -o results/output -b 10000 -p -c 3
+
 ##################################################################
 
 def main():

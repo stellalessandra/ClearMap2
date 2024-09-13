@@ -1,3 +1,39 @@
+# Python Script Documentation
+
+### Overview
+
+# This Python script is designed to perform statistical analysis and comparisons of voxelized brain data and brain area point counts across multiple experimental groups of subjects.
+
+# ### Key Features
+# - **Data Import and Configuration:** The script imports data directories and subjects from a configuration file (`configfile.yaml`), listing subjects from a specific directory while excluding certain groups.
+# - **Group Pair Generation:** Unique string pairs of experimental groups are generated for pairwise comparisons.
+# - **T-test for Voxelized Data:** A function performs t-tests between two groups on voxelized brain data, outputs p-values and significance maps, and writes them to files.
+# - **Brain Area Comparison:** The script runs statistical tests over brain areas, comparing point counts across regions between different experimental groups.
+  
+
+# 1. **Initialization**
+# - **Workspace Setup:** The script sets up the environment by adding paths to the ClearMap library and importing necessary modules.
+# - **Configuration Loading:** It loads a configuration file (`configfile.yaml`) that contains the data directory and other parameters. The list of subjects is fetched from this directory, with specific subjects removed from the analysis.
+
+# 2. **String Pair Generation**
+# The `generate_unique_string_pairs` function generates unique pairs of experimental groups. These pairs are used for comparing different conditions in subsequent statistical tests.
+
+# 3. **T-test Function for Voxelized Data**
+# - The `t_test` function runs t-tests between two voxelized data groups. It computes p-values, significance values, and color-coded p-value maps that are saved as `.tif` files. The function also calculates and saves the average voxel data for each group.
+# - The function writes several output files to the specified directory:
+#   - Positive and negative voxel statistics.
+#   - Average voxel data for each group.
+
+# 4. **T-tests Between Experimental Groups**
+# The script divides subjects into experimental groups using the `utils.divide_in_exp_groups` function. It then performs pairwise t-tests between these groups using the `t_test` function, iterating through each unique group pair.
+
+# 5. **Brain Area Statistical Analysis**
+# - The script compares brain areas between different experimental conditions (e.g., Control vs Familiar, Unfamiliar vs Familiar) by counting points in specific brain regions.
+# - The `test_brain_areas` function reads the point data for each group, prepares annotation files for brain region labeling, and performs t-tests to compare the point counts across regions.
+# - Results include p-values, significance values, and point counts for each group in different brain regions, allowing identification of regions with significant differences.
+
+###################################################################################
+
 #%% Initialize workspace
 import sys
 sys.path.append('/data/user/ClearMap2')
@@ -78,41 +114,41 @@ for pair in list(generate_unique_string_pairs(groups)):
                label2=pair[1], directory=directory)
 
 
-#%%
-#Run statistics over brain areas to find the ones with a significant difference
+%%
+# Run statistics over brain areas to find the ones with a significant difference
 
-# control = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Control' in subject] 
+control = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Control' in subject] 
 
-# fam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Fam' in subject]     
+fam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Fam' in subject]     
 
-# unfam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Unfam' in subject]  
+unfam = [directory + subject + '/' + 'cells_ClearMap1_points_transformed.npy' for subject in subjects if 'Unfam' in subject]  
 
 
-# points_control=gs.read_group(control, combine=False)
-# points_fam=gs.read_group(fam, combine=False)
-# points_unfam=gs.read_group(unfam, combine=False)
+points_control=gs.read_group(control, combine=False)
+points_fam=gs.read_group(fam, combine=False)
+points_unfam=gs.read_group(unfam, combine=False)
 
-# def test_brain_areas(points1, points2):  
-#     #Set the proper annotation file
-#     annotation_file, reference_file, distance_file=ano.prepare_annotation_files(
-#     slicing=(slice(None),slice(None),slice(1,256)), orientation=(1,2,3),
-#     overwrite=False, verbose=True)
+def test_brain_areas(points1, points2):  
+    #Set the proper annotation file
+    annotation_file, reference_file, distance_file=ano.prepare_annotation_files(
+    slicing=(slice(None),slice(None),slice(1,256)), orientation=(1,2,3),
+    overwrite=False, verbose=True)
 
-#     counts1=gs.count_points_group_in_regions(points1, annotation_file = annotation_file, 
-#                                           weight_group = None, invalid = 0, hierarchical = False)
-#     counts2=gs.count_points_group_in_regions(points2, annotation_file = annotation_file, 
-#                                           weight_group = None, invalid = 0, hierarchical = False)  
-#     labels=ano.annotation.names
+    counts1=gs.count_points_group_in_regions(points1, annotation_file = annotation_file, 
+                                          weight_group = None, invalid = 0, hierarchical = False)
+    counts2=gs.count_points_group_in_regions(points2, annotation_file = annotation_file, 
+                                          weight_group = None, invalid = 0, hierarchical = False)  
+    labels=ano.annotation.names
 
-#     pvalreg, signreg=gs.t_test_region_countss(counts1, counts2, 
-#                                               annotation_file = annotation_file, 
-#                                               signed = True, remove_nan = True,
-#                                               p_cutoff = 0.05, equal_var = False)
-#     return pvalreg, signreg, labels, counts1, counts2
+    pvalreg, signreg=gs.t_test_region_countss(counts1, counts2, 
+                                              annotation_file = annotation_file, 
+                                              signed = True, remove_nan = True,
+                                              p_cutoff = 0.05, equal_var = False)
+    return pvalreg, signreg, labels, counts1, counts2
     
-# pvalreg_control_fam, signreg_control_fam, labels, counts1cf, counts2cf = test_brain_areas(points1=points_control, points2=points_fam)  
-# pvalreg_unfam_fam, signreg_unfam_fam, labels, counts1uf, counts2uf = test_brain_areas(points1=points_unfam, points2=points_fam)  
-# pvalreg_control_unfam, signreg_control_unfam, labels, counts1cu, counts2cu = test_brain_areas(points1=points_control, points2=points_unfam)  
+pvalreg_control_fam, signreg_control_fam, labels, counts1cf, counts2cf = test_brain_areas(points1=points_control, points2=points_fam)  
+pvalreg_unfam_fam, signreg_unfam_fam, labels, counts1uf, counts2uf = test_brain_areas(points1=points_unfam, points2=points_fam)  
+pvalreg_control_unfam, signreg_control_unfam, labels, counts1cu, counts2cu = test_brain_areas(points1=points_control, points2=points_unfam)  
 
 
 

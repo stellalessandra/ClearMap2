@@ -10,7 +10,71 @@ import seaborn as sns
 import utils
 
 #################################################################
-# Core utility functions of PLS developed by Ludovico Silvestri
+# # Core utility functions of PLS developed by Ludovico Silvestri
+
+# # Python Script Documentation
+
+# ## Overview
+
+# This Python script is designed for advanced analysis of neuroscientific data, particularly for identifying significant brain regions and evaluating metrics related to cell activity (e.g., cell counts, energy distribution). It integrates data processing, statistical testing, visualization, and Partial Least Squares (PLS) analysis. The script is modular and applies these tools to brain data, such as those available in the Allen Brain Atlas.
+
+# ---
+
+# ## Key Components
+
+# ### 1. Heatmap Generation (`heatmap`)
+# Generates a 3D heatmap of cell activity from CSV files. The function:
+# - Uses a spherical mask to aggregate data points into a grid based on their coordinates.
+# - Scales and normalizes the data.
+# - Outputs the result as a 3D NumPy array.
+
+# ### 2. Reading Heatmap Files (`read_heat_folder`)
+# Reads a folder of TIFF files and loads them into a 4D NumPy array for further processing.
+
+# ### 3. Statistical Tests (`ttest`)
+# Performs a Student’s t-test to compare two groups:
+# - Computes the t-statistic based on the means and standard deviations.
+# - Returns the p-value for hypothesis testing.
+
+# ### 4. Partial Least Squares (PLS) Analysis (`pls`)
+# Performs PLS analysis to uncover correlations between two sets of variables (e.g., brain areas and experimental conditions). The script:
+# - Performs Singular Value Decomposition (SVD) on the result matrix.
+# - Returns the decomposition matrices for further interpretation.
+
+# ### 5. Procrustes Alignment (`procrustes`)
+# Aligns two matrices via Procrustes analysis:
+# - Optimally aligns two datasets, useful for comparing PLS results across groups.
+
+# ### 6. Bootstrap Testing (`bootstrap_test`)
+# Generates multiple resamples of the data:
+# - Assesses the stability of PLS components.
+# - Estimates the variability of principal components from PLS analysis.
+
+# ### 7. Dictionary and Acronym Handling (`reformat_dict_acronym`)
+# Converts brain region names into acronyms using volume data from a DataFrame:
+# - Ensures consistency in naming conventions during analysis.
+
+# ### 8. Significant Area Selection (`select_significant_areas`)
+# Identifies brain areas with statistically significant p-values:
+# - Highlights regions with significant differences across experimental conditions.
+
+# ### 9. PLS Salience Area Identification (`identify_pls_sig_areas`)
+# Selects brain areas with significant saliences from PLS analysis:
+# - Applies a threshold to identify the most influential regions explaining variance between groups.
+
+# ### 10. Formatting Data for PLS Analysis (`format_data_pls`)
+# Transforms data from a dictionary into a format suitable for PLS analysis:
+# - Organizes data by subjects, experimental groups, and additional factors (e.g., sex).
+
+# ### 11. Brain Hierarchy Levels (`create_df_levels`)
+# Creates a DataFrame linking brain areas to hierarchical parent areas (e.g., Allen Brain Atlas level 5):
+# - Filters areas to ensure relevance to the analysis.
+  
+# ### 12. Plotting Functions
+# - `plot_contrasts`: Creates bar plots for contrasts between experimental groups.
+# - `plot_saliences`: Visualizes PLS saliences by brain region hierarchy.
+# - `plot_panel_contrasts` and `plot_panel_saliences`: Generate multi-panel plots of contrasts and saliences, with options for customized color palettes.
+
 #################################################################
 
 def heatmap(file, limit, scale, mask, xsize, ysize, zsize, normalize):
