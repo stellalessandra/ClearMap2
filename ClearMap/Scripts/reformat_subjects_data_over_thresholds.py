@@ -27,7 +27,7 @@ def load_subject(subject, data_directory, threshold):
     
     return df_mouse
 
-thresholds = [500, 1500, 2500, 3500, 4500]
+thresholds = [500, 1500, 2500, 3500, 4500, 5500, 6500]
 
 for subject in subjects:
     for threshold in thresholds:
