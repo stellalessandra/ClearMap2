@@ -98,7 +98,7 @@ convert_data_to_numpy(ws=ws,
                       rerun=rerun)
 
 
-# resampling of autofluorescence
+# resampling of cfos file
 resampling(ws=ws, 
            source_res=source_res, 
            sink_res=sink_res,
@@ -106,7 +106,7 @@ resampling(ws=ws,
            directory=data_directory)
 
 
-# alignment of resampled to autofluorescence and to reference
+# alignment of resampled to reference
 alignment(ws=ws, 
           alignment_files_directory=resources_directory, 
           align_to=align_to, 
