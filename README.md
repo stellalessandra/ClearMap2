@@ -1,3 +1,11 @@
+This work originates as a fork of ClearMap 2.0, and it was modified to accustom to Lightsheet fluorescence microscopy analysis of data of the Imprinted Lab of Prof. Serena Bovetti [https://nico.ottolenghi.unito.it/team/serena-bovetti/] at the University of Turin, Italy. Contributors for the code of this original work are listed here:
+- Dr. Alessandra Stella [https://github.com/stellalessandra]
+- Dr. Stefano Zucca
+- Ilaria Ghia
+- Nicole Mancin
+- Veronica Mina
+
+
 ClearMap
 ========
 
